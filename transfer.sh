@@ -176,6 +176,7 @@ transfer_selected_program() {
     if [ -n "$selected_folder" ]; then
         full_path="$parent_dir/$selected_folder"
         echo "Transferring $selected_folder..."
+        echo "rsync -av --progress ssh -p $dest_svr_port $full_path root@$dest_svr_ip:/home/www/$dest_dir/"
         rsync -av --progress \
             --exclude='runtime' \
             --exclude='site' \
