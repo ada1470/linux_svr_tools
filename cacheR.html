@@ -2,7 +2,8 @@
 <html>
 
 <head>
-  <title>Cache Remover</title>
+     <meta charset="UTF-8">
+  <title>指定删除缓存域名列表的工具</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -89,7 +90,6 @@
       border-radius: 4px;
     }
 
-    /* Optional styles for dropdown arrow */
     select::-ms-expand {
       display: none;
     }
@@ -102,7 +102,6 @@
       pointer-events: none;
     }
 
-    /* Optional hover/focus styles */
     select:hover,
     select:focus {
       border-color: #888;
@@ -121,14 +120,14 @@
 
 <body>
   <div class="container">
-    <h1>Cache Remover</h1>
+    <h1>指定删除缓存域名列表的工具</h1>
     <div>
-      <label class="label" for="domainInput">Domain List</label>
-      <textarea class="textarea" name="domainInput" id="domainInput" placeholder="Enter domain list here"></textarea>
+      <label class="label" for="domainInput">要删除缓存的域名列表</label>
+      <textarea class="textarea" name="domainInput" id="domainInput" placeholder="在此输入要删除缓存的指定域名列表"></textarea>
     </div>
     <div class="controls">
       <div>
-        <label for="program">Choose a program:</label>
+        <label for="program">选择程序：</label>
         <select name="program" id="program">
           <option value="film.com">film.com</option>
           <option value="film222.com">film222.com</option>
@@ -140,15 +139,15 @@
       </div>
       <div class="checkbox">
         <input type="checkbox" id="removeSubdomain" checked>
-        <label for="removeSubdomain">Remove subdomain</label>
+        <label for="removeSubdomain">省略二级域名</label>
       </div>
     </div>
     <div class="button-container">
-      <button id="convertButton">Convert</button>
-      <button id="copyButton">Copy Result</button>
+      <button id="convertButton">生成命令</button>
+      <button id="copyButton">复制结果</button>
     </div>
     <div id="result">
-      <label class="label">Converted Output</label>
+      <label class="label">命令结果</label>
       <textarea class="textarea" id="output" readonly></textarea>
       <p id="copyNotification"></p>
     </div>
@@ -159,33 +158,31 @@
       var domainInput = document.getElementById('domainInput').value;
       var program = document.getElementById('program').value;
 
-      // Split the input by newlines and commas
+      // 按换行符、逗号等分割输入
       var domains = domainInput.split(/[\n,，、\s]/).map(function (domain) {
         return domain.trim();
       }).filter(function (domain) {
-        return domain !== ''; // Exclude empty domain names
-      });;
+        return domain !== ''; // 排除空白的域名
+      });
 
       if (domainInput === "") {
-        alert('Please input list of domainname first!');
+        alert('请先输入域名列表！');
         return;
       }
 
-      // Check if there's only one domain
+      // 检查是否只有一个域名
       if (domains.length === 1) {
-        var confirmResult = confirm("There's only one domain in the list. Continue?");
+        var confirmResult = confirm("列表中只有一个域名。确定继续吗？");
         if (!confirmResult) {
           return;
         }
       }
 
-      // Sort and prepare the output
+      // 排序并处理输出
       var sortedDomains = domains.sort();
       var output = sortedDomains.map(function (domain) {
-        // return "! -path '*/" + domain + "/*' \\";
         if (removeSubdomain) {
-          // Extract the domain name without the subdomain
-          // var domainName = domain.match(/(?:https?:\/\/)?(?:www\.)?([^/]+)[/]?/)[1];
+          // 移除子域名
           var domainName = domain.replace('www.', '');
           domainName = domainName.replace('*.', '');
           return domainName;
@@ -196,11 +193,11 @@
 
       var stroutput = `rm -rfv /home/www/wwwroot/${program}/site/{${output}}/cache`;
 
-      // Set the output text
+      // 设置输出文本
       var outputTextArea = document.getElementById('output');
       outputTextArea.value = stroutput;
 
-      // Check if the output contains special characters and change background color accordingly
+      // 检查输出是否包含特殊字符，并更改背景颜色
       console.log(output);
       if (/[^\sa-zA-Z0-9*\/\.\-{,}]/.test(output)) {
         outputTextArea.style.backgroundColor = 'red';
@@ -210,15 +207,15 @@
     });
 
     var copyButton = document.getElementById('copyButton');
-    copyButton.addEventListener('click',function(){
+    copyButton.addEventListener('click', function () {
       var outputTextArea = document.getElementById('output');
       outputTextArea.select();
       document.execCommand('copy');
-      alert('Result has been copied to the clipboard!');
+      alert('结果已复制到剪贴板！');
     });
 
     var domainInput = document.getElementById('domainInput');
-    domainInput.addEventListener('input', function() {
+    domainInput.addEventListener('input', function () {
       var outputTextArea = document.getElementById('output');
       outputTextArea.style.background = "none";
     });
