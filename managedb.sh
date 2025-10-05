@@ -94,7 +94,14 @@ export_mysql() {
     local db_size_mb=$((db_size_bytes / 1024 / 1024))
     local estimated_time=$((db_size_mb / 33))  # seconds
 
+    # Format time
+    current_time=$(date +"%H:%M:%S")
+    finish_time=$(date -d "+$estimated_time seconds" +"%H:%M:%S")
+    
     echo -e "\n📦 Exporting database [$dbname] (~${db_size_mb} MB, estimated ${estimated_time}s)..."
+    echo "⏰ Start: $current_time"
+    echo "✅ Estimated finish: $finish_time"
+
 
     # Start export in background
     ( mysqldump -uroot -p"$pwd" "$dbname" | gzip > "$outfile" ) &
@@ -284,8 +291,15 @@ while true; do
             # Measure file size and estimate time
             size=$(stat -c %s "$import_file")
             size_mb=$((size / 1024 / 1024))
-            time_consum=$((size_mb/100))
+            time_consum=$((size_mb / 102))
             echo "📊 File size: ${size_mb} MB. Estimated time: ~${time_consum} minutes"
+            
+            # Show start and estimated finish times
+            current_time=$(date +"%H:%M:%S")
+            finish_time=$(date -d "+$time_consum minutes" +"%H:%M:%S")
+            echo "⏰ Start: $current_time"
+            echo "✅ Estimated finish: $finish_time"
+
             
             # Record start time
             time_start=$(date +%s)
