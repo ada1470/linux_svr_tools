@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Combiner</title>
+    <style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .container>div {
+            margin-bottom: 20px;
+        }
+
+        .label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .textarea {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        #copyNotification {
+            color: blue;
+            margin-top: 5px;
+        }
+
+        .button {
+            padding: 10px 20px;
+            background-color: #4caf50;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container center">
+        <div>
+            <label class="label" for="textinput">Input</label>
+            <textarea class="textarea" name="textinput" id="textinput" cols="30" rows="10"></textarea>
+            <p id="copyNotification"></p>
+        </div>
+        <div>
+            <button class="button" id="combineButton">Combine IP Ranges</button>
+        </div>
+        <div>
+            <label class="label" for="textoutput">Output</label>
+            <textarea class="textarea" name="textoutput" id="textoutput" cols="30" rows="10" readonly></textarea>
+            <p id="copyNotification"></p>
+        </div>
+        <div>
+            <button class="button" id="selectAll">Select All</button>
+            <button class="button" id="copyToClipboard">Copy to Clipboard</button>
+        </div>
+        
+        
+    </div>
+    <script>
+        function combineIPRanges() {
+            var textInput = document.getElementById('textinput');
+            var textOutput = document.getElementById('textoutput');
+            var ips = textInput.value.split('\n').filter(function (ip) {
+                return ip.trim() !== '';
+            });
+          
+            // Sort the IP addresses
+            ips.sort(function (a, b) {
+                return ipToNumber(a) - ipToNumber(b);
+            });
+
+            var combinedIPs = [];
+            var currentRange = [];
+
+            for (var i = 0; i < ips.length; i++) {
+                var currentIP = ips[i];
+
+                if (currentRange.length === 0) {
+                    currentRange.push(currentIP);
+                } else {
+                    var previousIP = currentRange[currentRange.length - 1];
+                    var currentParts = currentIP.split('.');
+                    var previousParts = previousIP.split('.');
+
+                    if (currentParts[0] === previousParts[0] && currentParts[1] === previousParts[1] && currentParts[2] === previousParts[2]) {
+                        currentRange.push(currentIP);
+                    } else {
+                        combinedIPs.push(getIPRange(currentRange));
+                        currentRange = [currentIP];
+                    }
+                }
+            }
+
+            // Push the last IP range
+            combinedIPs.push(getIPRange(currentRange));
+
+            // Update the textarea with the combined IP ranges
+            textOutput.value = combinedIPs.join('\n');
+        }
+
+        function getIPRange(ipRange) {
+            if (ipRange.length === 1) {
+                return ipRange[0];
+            } else {
+                return ipRange[0] + '-' + ipRange[ipRange.length - 1];
+            }
+        }
+        
+        // Helper function to convert IP address to a numeric value
+        function ipToNumber(ip) {
+            var parts = ip.split('.');
+            var number = 0;
+            for (var i = 0; i < parts.length; i++) {
+                number = number * 256 + parseInt(parts[i], 10);
+            }
+            return number;
+        }
+
+        var combineButton = document.getElementById('combineButton');
+        combineButton.addEventListener('click', combineIPRanges);
+
+        var sellectButton = document.getElementById('selectAll');
+        sellectButton.addEventListener('click', function(){
+            var textOutput = document.getElementById('textoutput');
+            textOutput.select();
+        });
+
+        var copyButton = document.getElementById('copyToClipboard');
+        copyButton.addEventListener('click', function(){
+            copyToClipboard();
+            var textOutput = document.getElementById('textoutput');
+            textOutput.style.background = 'orange';
+        });
+        
+        function copyToClipboard() {
+            var textOutput = document.getElementById('textoutput');
+            textOutput.select();
+            document.execCommand("copy");
+        }
+
+
+        var textInput = document.getElementById('textinput');
+        textInput.addEventListener('input', () => {
+            var textOutput = document.getElementById('textoutput');
+            textOutput.style.background = "none";
+        });
+
+    </script>
+</body>
+
+</html>

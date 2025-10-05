@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Cache Remover</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #5a586d;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    .controls {
+      display: flex;
+    }
+
+    .controls div {
+      margin-left: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .label {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .textarea {
+      width: 100%;
+      height: 120px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      resize: vertical;
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    #copyButton {
+      margin-left: 10px;
+    }
+
+    #copyNotification {
+      margin-top: 10px;
+      text-align: center;
+      color: green;
+    }
+
+    button {
+      display: block;
+      margin-top: 10px;
+      padding: 8px 12px;
+      border: none;
+      background-color: #4caf50;
+      color: #fff;
+      font-size: 14px;
+      font-weight: bold;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    select {
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    /* Optional styles for dropdown arrow */
+    select::-ms-expand {
+      display: none;
+    }
+
+    select::after {
+      content: '\25BC';
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      pointer-events: none;
+    }
+
+    /* Optional hover/focus styles */
+    select:hover,
+    select:focus {
+      border-color: #888;
+    }
+
+    .checkbox {
+      display: flex;
+      flex-direction: row;
+    }
+
+    .checkbox input {
+      width: 40px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Cache Remover</h1>
+    <div>
+      <label class="label" for="domainInput">Domain List</label>
+      <textarea class="textarea" name="domainInput" id="domainInput" placeholder="Enter domain list here"></textarea>
+    </div>
+    <div class="controls">
+      <div class="checkbox">
+        <input type="checkbox" id="removeSubdomain" checked>
+        <label for="removeSubdomain">Remove subdomain</label>
+      </div>
+    </div>
+    <div class="button-container">
+      <button id="convertButton">Convert</button>
+      <button id="copyButton">Copy Result</button>
+    </div>
+    <div id="result">
+      <label class="label">Converted Output</label>
+      <textarea class="textarea" id="output" readonly></textarea>
+      <p id="copyNotification"></p>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('convertButton').addEventListener('click', function () {
+      var domainInput = document.getElementById('domainInput').value;
+
+      // Split the input by newlines and commas
+      var domains = domainInput.split(/[\n,，、\s]/).map(function (domain) {
+        return domain.trim();
+      }).filter(function (domain) {
+        return domain !== ''; // Exclude empty domain names
+      });;
+
+      if (domainInput === "") {
+        alert('Please input list of domainname first!');
+        return;
+      }
+
+      // Check if there's only one domain
+      if (domains.length === 1) {
+        var confirmResult = confirm("There's only one domain in the list. Continue?");
+        if (!confirmResult) {
+          return;
+        }
+      }
+
+      // Sort and prepare the output
+      var sortedDomains = domains.sort();
+      var output = sortedDomains.map(function (domain) {
+        // return "! -path '*/" + domain + "/*' \\";
+        if (removeSubdomain) {
+          // Extract the domain name without the subdomain
+          // var domainName = domain.match(/(?:https?:\/\/)?(?:www\.)?([^/]+)[/]?/)[1];
+          var domainName = domain.replace('www.', '');
+          domainName = domainName.replace('*.', '');
+          return domainName;
+        } else {
+          return domain;
+        }
+      }).join(',');
+
+      var stroutput = `rm -rfv /home/www/wwwroot/*/site/{${output}}/cache`;
+
+      // Set the output text
+      var outputTextArea = document.getElementById('output');
+      outputTextArea.value = stroutput;
+
+      // Check if the output contains special characters and change background color accordingly
+      console.log(output);
+      if (/[^\sa-zA-Z0-9*\/\.\-{,}]/.test(output)) {
+        outputTextArea.style.backgroundColor = 'red';
+      } else {
+        outputTextArea.style.backgroundColor = 'green';
+      }
+    });
+
+    var copyButton = document.getElementById('copyButton');
+    copyButton.addEventListener('click',function(){
+      var outputTextArea = document.getElementById('output');
+      outputTextArea.select();
+      document.execCommand('copy');
+      alert('Result has been copied to the clipboard!');
+    });
+
+    var domainInput = document.getElementById('domainInput');
+    domainInput.addEventListener('input', function() {
+      var outputTextArea = document.getElementById('output');
+      outputTextArea.style.background = "none";
+    });
+
+  </script>
+
+</body>
+
+</html>

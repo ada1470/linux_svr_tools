@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find and Replace Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f7f7;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="radio"],
+        input[type="checkbox"],
+        button {
+            margin-bottom: 10px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 16px;
+        }
+
+        input[type="text"] {
+            width: calc(100% - 40px);
+        }
+
+        button {
+            background-color: #4caf50;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 16px;
+            resize: vertical;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Find and Replace Tool</h1>
+        <label for="directory">Directory:</label>
+        <input type="text" id="directory" name="directory" required placeholder="/home/www/wwwroot/film.com/"><br><br>
+
+        <label for="find">Find:</label>
+        <input type="text" id="find" name="find" required placeholder="base64_encode">
+        <label for="fast">Fast</label>
+        <input type="radio" id="fast" name="speed" value="fast">
+        <label for="slow">Slow</label>
+        <input type="radio" id="slow" name="speed" value="slow" checked>
+
+        <input type="checkbox" id="skiplarge" onchange="toggleReplace()" checked>
+        <label for="skiplarge">Skip large file</label><br><br>
+
+        <label for="extension">Log filename:</label>
+        <input type="text" id="logfile" name="extension" placeholder="backdoor.log">
+        <div class="form-input">
+            <input type="checkbox" id="writelog" onchange="toggleReplace()">
+            <label for="writelog">Write log file</label>
+            
+            <input type="checkbox" id="addtime" onchange="toggleReplace()" checked disabled>
+            <label for="addtime">Add timestamp</label>
+        </div><br><br>
+
+        <label for="extension">File Extension:</label>
+        <input type="text" id="extension" name="extension" placeholder="php (search for *.php)" oninput="toggleReplace()">
+
+        <label for="excludefile">Exclude File Extension:</label>
+        <input type="text" id="excludefile" name="excludefile" placeholder="html (exclude for *.html)">
+
+        <label for="excludedir">Exclude Directory:</label>
+        <input type="text" id="excludedir" name="excludedir" placeholder="/cache/* (exclude for /cache/*)"><br><br>
+
+        <input type="checkbox" id="replaceCheckbox" onchange="toggleReplace()">
+        <label for="replaceCheckbox">Replace:</label>
+        <input type="text" id="replace" name="replace" disabled><br><br>
+
+        <button onclick="generateString()">Generate</button>
+        <button onclick="copyToClipboard()">Copy</button><br><br>
+
+        <textarea id="result" rows="10" cols="50"></textarea>
+    </div>
+
+    <script>
+        function toggleReplace() {
+            var replaceInput = document.getElementById("replace");
+            var fastRadio = document.getElementById("fast");
+            var slowRadio = document.getElementById("slow");
+            var replaceCheckbox = document.getElementById("replaceCheckbox");
+            var writelogCheckbox = document.getElementById("writelog");
+            var addtimeCheckbox = document.getElementById("addtime");
+            var logfile = document.getElementById("logfile");
+            var extension = document.getElementById("extension");
+            var excludefile = document.getElementById("excludefile");
+
+            replaceInput.disabled = !replaceCheckbox.checked;
+            fastRadio.disabled = replaceCheckbox.checked;
+            slowRadio.disabled = replaceCheckbox.checked;
+            addtimeCheckbox.disabled = !writelogCheckbox.checked;
+            logfile.disabled = !writelogCheckbox.checked;
+            excludefile.disabled = extension.value;
+
+            if (writelogCheckbox.checked) {
+                if (addtimeCheckbox.checked && !/\d+\.log/.test(logfile.value)) {
+                    if (logfile.value != "") {
+                        logfile.value += `_${Date.now()}.log`;
+                    } else {
+                        logfile.value = `backdoor_${Date.now()}.log`;
+                    }
+                    console.log(logfile.value);
+                }
+            }
+            
+
+        }
+
+        function generateString() {
+            var directory = document.getElementById("directory").value;
+            var find = document.getElementById("find").value;
+            var replace = document.getElementById("replace").value;
+            var speed = document.querySelector('input[name="speed"]:checked').value;
+            var extension = document.getElementById("extension").value;
+            var excludefile = document.getElementById("excludefile").value;
+            excludefile = !extension? excludefile : '';
+            var excludedir = document.getElementById("excludedir").value;
+            var resultTextarea = document.getElementById("result");
+            var writelogCheckbox = document.getElementById("writelog");
+            var addtimeCheckbox = document.getElementById("addtime");
+            var logfile = document.getElementById("logfile");
+            var skiplargeRadio = document.getElementById("skiplarge");
+
+            if (directory == "") directory = "/";
+            if (find == "") {
+                alert("Key word is empty!");
+                return;
+            }
+            
+            var generatedString = "";
+
+            var strWritelogfile = "";
+
+            if (writelogCheckbox.checked) {
+                var logfilename = "";
+                if (addtimeCheckbox.checked && !/\d+\.log/.test(logfile.value)) {
+                    if (logfile.value != "") {
+                        logfile.value += `_${Date.now()}.log`;
+                    } else {
+                        logfile.value = `backdoor_${Date.now()}.log`;
+                    }
+                }
+                logfilename = logfile.value;
+
+                strWritelogfile = ` > ${logfilename}`;
+            }
+            
+            console.log(strWritelogfile);
+
+            var skiplarge = "";
+            if (skiplargeRadio.checked) skiplarge = ' -size 1M';
+
+            if (replace) {
+                generatedString += `find ${directory} -type f`;
+                if (extension) {
+                    generatedString += ` -name "*.${extension}"`;
+                }
+                if (excludefile && !extension) {
+                    generatedString += ` ! -name "*.${excludefile}"`;
+                }
+                if (excludedir) {
+                    generatedString += ` ! -path "${excludedir}"`;
+                }
+                generatedString += ` -exec sed -i 's#${find}#${replace}#g' {} + -print\n`;
+            } else {
+                generatedString += `find ${directory} -type f${skiplarge}`;
+                if (extension) {
+                    generatedString += ` -name "*.${extension}"`;
+                }
+                if (excludefile && !extension) {
+                    generatedString += ` ! -name "*.${excludefile}"`;
+                }
+                if (excludedir) {
+                    generatedString += ` ! -path "${excludedir}"`;
+                }
+                if (speed === "fast") {
+                    generatedString += ` -exec egrep -lH "${find}" {} +\n`;
+                } else if (speed === "slow") {
+                    generatedString += ` -exec egrep -lH "${find}" {} + | xargs -I{} sh -c 'echo "File: {}"; egrep -o ".{0,100}${find}.{0,100}" {}' ${strWritelogfile}\n`;
+                }
+            }
+
+            resultTextarea.value = generatedString;
+        }
+
+        function copyToClipboard() {
+            var resultTextarea = document.getElementById("result");
+            resultTextarea.select();
+            if (resultTextarea.value == "") {
+                alert("Empty!");
+            } else {
+                document.execCommand("copy");
+                alert("Copied to clipboard!");
+            }
+        }
+    </script>
+</body>
+
+</html>

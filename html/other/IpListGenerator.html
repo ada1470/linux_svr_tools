@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP List Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        textarea, input, select {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        button {
+            margin-right: 10px;
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background-color: #5cb85c;
+            color: white;
+            font-size: 14px;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #4cae4c;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            background: #f4f4f9;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>IP List Generator</h1>
+        <textarea rows="20" id="ipInput" placeholder="Enter IP addresses, one per line..."></textarea>
+        <select id="actionInput">
+            <option value="drop">drop</option>
+            <option value="accept">accept</option>
+        </select>
+        <input type="text" id="markInput" placeholder="Enter Mark (e.g., description of IP)">
+        <br>
+        <button onclick="copyResult()">Copy Result</button>
+        <button onclick="downloadJson()">Download JSON</button>
+        <pre id="resultOutput"></pre>
+    </div>
+    <script>
+        function generateResult() {
+            const action = document.getElementById('actionInput').value;
+            const mark = document.getElementById('markInput').value;
+            const input = document.getElementById('ipInput').value;
+            const lines = input.split('\n').map(line => line.trim()).filter(line => line);
+            const result = lines.map((ip, index) => {
+                return {
+                    order: index + 1,
+                    action: action,
+                    ip: ip,
+                    mark: mark
+                };
+            });
+            const formattedResult = result.map(item => 
+                `${item.order}|${item.action}|${item.ip}|${item.mark}||0||`
+            ).join('\n');
+            return formattedResult;
+        }
+
+        function displayResult() {
+            const result = generateResult();
+            document.getElementById('resultOutput').textContent = result;
+        }
+
+        function copyResult() {
+            const result = generateResult();
+            navigator.clipboard.writeText(result).then(() => {
+                alert('Result copied to clipboard!');
+            }, () => {
+                alert('Failed to copy result.');
+            });
+        }
+
+        function downloadJson() {
+            const result = generateResult();
+            const blob = new Blob([result], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'ip-list.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        document.getElementById('actionInput').addEventListener('input', displayResult);
+        document.getElementById('markInput').addEventListener('input', displayResult);
+        document.getElementById('ipInput').addEventListener('input', displayResult);
+    </script>
+</body>
+</html>

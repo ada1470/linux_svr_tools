@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Extracter</title>
+    <style>
+        body {
+            padding: 10px;
+        }
+
+        .container {
+            width: 600px;
+        }
+
+        .center {
+            margin: 0 auto;
+        }
+    </style>
+
+    <style>
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .input-container {
+            margin-bottom: 20px;
+        }
+
+        .label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .textarea {
+            width: 300px;
+            /* height: 150px; */
+            resize: vertical;
+            padding: 5px;
+            font-size: 14px;
+            font-family: consolas;
+        }
+
+        .button {
+            padding: 5px 10px;
+            font-size: 14px;
+            width: 100px;
+            background-color: beige;
+        }
+
+        .button:hover {
+            background-color: orangered;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <div class="container center">
+        <div class="input-container">
+            <label class="label" for="textinput">Input</label>
+            <textarea class="textarea" name="textinput" id="textinput" cols="30" rows="10"></textarea>
+        </div>
+        <div>
+            <input type="button" class="button" id="btnPaste" value="Paste"></input>
+            <input type="button" class="button" id="btnExtract" value="Extract">
+            <input type="button" class="button" id="sortIpButton" value="Sort">
+        </div>
+        <div>
+            <label class="label" for="textoutput">Output</label>
+            <textarea class="textarea" name="textoutput" id="textoutput" cols="30" rows="10" readonly></textarea>
+            <p id="ipCount">Number of IPs: <span id="count">0</span></p>
+            <p id="copyNotification"></p>
+        </div>
+        <div>
+            <input type="button" class="button" id="btnCopy" value="Copy"></input>
+        </div>
+    </div>
+
+    <script>
+        window.onload = function () {
+            document.getElementById('textinput').select();
+        };
+    </script>
+    <script>
+        document.getElementById('btnExtract').onclick = function () {
+            var input = document.getElementById("textinput").value;
+            var output = extractIP(input);
+            console.log(output);
+            document.getElementById("textoutput").value = output.join("\n");
+
+            // Update the IP count
+            var countElement = document.getElementById('count');
+            countElement.textContent = countIPAddresses();
+
+        };
+
+        function countIPAddresses() {
+            var textOutput = document.getElementById('textoutput');
+            var ips = textOutput.value.split('\n').filter(function (ip) {
+                return ip.trim() !== '';
+            });
+            var ipCount = ips.length;
+
+            console.log('Number of IPs:', ipCount);
+            return ipCount;
+        }
+
+
+
+        function extractIP(input) {
+            const ipRegex = /\b(?:\d{1,3}\.){3}\d{1,3}\b/g;
+            const ips = input.match(ipRegex);
+            return ips;
+        }
+    </script>
+    <script>
+        // Function to handle the paste button click
+        function handlePaste() {
+            navigator.clipboard.readText().then(function (text) {
+                document.getElementById("textinput").value = text;
+            });
+        }
+
+        // Attach event listener to the paste button
+        document.getElementById("btnPaste").addEventListener("click", handlePaste);
+    </script>
+    <script>
+        // Function to handle the copy button click
+        function handleCopy() {
+            var textOutput = document.getElementById("textoutput").value;
+            navigator.clipboard.writeText(textOutput).then(function () {
+                displayNotification("Text copied to clipboard.");
+                document.getElementById("textoutput").style.background = "orange";
+            }, function (err) {
+                console.error("Unable to copy text to clipboard: ", err);
+            });
+        }
+
+        // Function to display the notification message
+        function displayNotification(message) {
+            var notification = document.getElementById("copyNotification");
+            notification.textContent = message;
+            notification.style.display = "block";
+
+            // Hide the notification after 2 seconds
+            setTimeout(function () {
+                notification.style.display = "none";
+            }, 2000);
+        }
+
+        // Attach event listener to the copy button
+        document.getElementById("btnCopy").addEventListener("click", handleCopy);
+
+    </script>
+    <script>
+        function sortIpAddresses() {
+            var textOutput = document.getElementById('textoutput');
+
+            // Get the IP addresses from the textarea and split them into an array
+            var ips = textOutput.value.split('\n');
+
+            // Remove any leading/trailing whitespace and empty lines
+            ips = ips.map(function (ip) {
+                return ip.trim();
+            }).filter(function (ip) {
+                return ip !== '';
+            });
+
+            // Sort the IP addresses
+            ips.sort(function (a, b) {
+                return ipToNumber(a) - ipToNumber(b);
+            });
+
+            // Update the textarea with the sorted IP addresses
+            textOutput.value = ips.join('\n');
+
+            // document.getElementById("textoutput").style.background = "orange";
+            textOutput.style.background = "beige";
+        }
+
+        function ipToNumber(ip) {
+            var parts = ip.split('.');
+            var number = 0;
+
+            for (var i = 0; i < parts.length; i++) {
+                number = number * 256 + parseInt(parts[i]);
+            }
+
+            return number;
+        }
+
+        var sortButton = document.getElementById('sortIpButton');
+        sortButton.addEventListener('click', sortIpAddresses);
+
+
+    </script>
+</body>
+
+</html>

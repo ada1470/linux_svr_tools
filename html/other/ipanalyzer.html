@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Analyzer</title>
+    <style>
+        .container {
+            align-items: center;
+            margin: 0 auto;
+            /* margin-top: 20px; */
+            max-width: 1620px;
+        }
+
+        .container>div {
+            margin-bottom: 20px;
+        }
+
+        .label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .textarea {
+            /* width: 100%; */
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        .copyNotification {
+            color: blue;
+            margin-top: 5px;
+        }
+
+        .button {
+            padding: 10px 20px;
+            background-color: #4caf50;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .button:hover {
+            background-color: #45a049;
+        }
+
+        .flex {
+            margin: 20px 5px;
+            flex: 50%;
+        }
+
+        .flex-row {
+            display: flex;
+            flex-direction: row;
+        }
+
+        .flex-col {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .center {
+            text-align: center;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container flex-row">
+        <div class="flex input">
+            <div class="flex flex-col center">
+                <label class="label" for="textinput">Input</label>
+                <div><textarea class="textarea" name="textinput" id="textinput" cols="30" rows="30"
+                        placeholder="127.0.0.1"></textarea></div>
+                <p id="lblInCount">Number of Lines: <span id="incount">0</span></p>
+                <div class="center">
+                    <input type="button" class="button" id="sortLineButton" value="Sort">
+                    <button class="button" id="extractButton">Extract IP List</button>
+                </div>
+            </div>
+
+        </div>
+        <div class="flex extracted">
+            <div class="flex flex-col center">
+                <label class="label" for="extractedip">Extracted</label>
+                <div><textarea class="textarea" name="extractedip" id="extractedip" cols="30" rows="30"
+                        placeholder="127.0.0.1"></textarea></div>
+                <p id="lblExtractedCount">Number of IPs: <span id="extractedcount">0</span></p>
+                <div class="center">
+                    <input type="button" class="button" id="sortIpButton" value="Sort">
+                    <button class="button" id="combineButton">Combine IP Ranges</button>
+                </div>
+            </div>
+
+        </div>
+        <div class="flex output flex-row">
+            <div class="flex range">
+                <div class="flex flex-col center">
+                    <label class="label" for="textoutput">Output Ip Range</label>
+                    <div><textarea class="textarea" name="textoutput" id="textoutputRange" cols="30" rows="30"
+                            readonly></textarea></div>
+                    <p id="ipOutCountRange">Number of lines: <span id="outcountRange">0</span></p>
+                    <p class="copyNotification" id="copyNotificationRange"></p>
+                    <div>
+                        <button class="button" id="copyRange">Copy Range Only</button>
+                        <button class="button" id="copyToClipboardRange">Copy All</button>
+                    </div>
+                </div>
+            </div>
+            <div class="flex ClassC">
+                <div class="flex flex-col center">
+                    <label class="label" for="textoutput">Output ClassC combined</label>
+                    <div><textarea class="textarea" name="textoutput" id="textoutputClassC" cols="30" rows="30"
+                            readonly></textarea></div>
+                    <p id="ipOutCountClassC">Number of lines: <span id="outcountClassC">0</span></p>
+                    <p class="copyNotification" id="copyNotificationClassC"></p>
+                    <div>
+                        <button class="button" id="copyClassC">Copy ClassC Only</button>
+                        <button class="button" id="copyToClipboardClassC">Copy All</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="flex ClassB">
+                <div class="flex flex-col center">
+                    <label class="label" for="textoutput">Output ClassB combined</label>
+                    <div><textarea class="textarea" name="textoutput" id="textoutputClassB" cols="30" rows="30"
+                            readonly></textarea></div>
+                    <p id="ipOutCountClassB">Number of lines: <span id="outcountClassB">0</span></p>
+                    <p class="copyNotification" id="copyNotificationClassB"></p>
+                    <div>
+                        <button class="button" id="copyCIDR">Copy CIDR Only</button>
+                        <button class="button" id="copyToClipboardClassB">Copy All</button>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+
+    </div>
+    <script>
+        
+        // Wait for the DOM to be fully loaded
+        document.addEventListener("DOMContentLoaded", function () {
+            // Get reference to the sort button
+            var sortButton = document.getElementById("sortLineButton");
+
+            // Add event listener to the sort button
+            sortButton.addEventListener("click", function () {
+                // Get the text from the textarea
+                var textArea = document.getElementById("textinput");
+                var text = textArea.value;
+
+                // Split the text into lines
+                var lines = text.split("\n");
+
+                // Sort the lines
+                lines.sort();
+
+                // Join the sorted lines back into a single string
+                var sortedText = lines.join("\n");
+
+                // Set the sorted text back into the textarea
+                textArea.value = sortedText;
+
+                // Update the count of lines
+                // document.getElementById("incount").innerText = lines.length;
+            });
+
+            // Get reference to the extract button
+            var extractButton = document.getElementById("extractButton");
+
+            // Add event listener to the extract button
+            extractButton.addEventListener("click", function () {
+                // Get the text from the textarea
+                var textArea = document.getElementById("textinput");
+                var text = textArea.value;
+
+                // Extract IP addresses using a regular expression
+                var ipList = text.match(/\b(?:\d{1,3}\.){3}\d{1,3}\b/g);
+
+                // If there are IP addresses found, display them
+                if (ipList) {
+                    // alert("Extracted IP List:\n" + ipList.join("\n"));
+                    const extractedip = document.getElementById("extractedip");
+                    extractedip.value = ipList.join("\n");
+                    updateResult();
+                } else {
+                    alert("No IP addresses found.");
+                }
+            });
+        });
+
+
+
+        var sortButton = document.getElementById('sortIpButton');
+        sortButton.addEventListener('click', sortIpAddresses);
+
+        function sortIpAddresses() {
+            var extractedip = document.getElementById('extractedip');
+
+            // Get the IP addresses from the textarea and split them into an array
+            var ips = extractedip.value.split('\n');
+
+            // Remove any leading/trailing whitespace and empty lines
+            ips = ips.map(function (ip) {
+                return ip.trim();
+            }).filter(function (ip) {
+                return ip !== '';
+            });
+
+            // Sort the IP addresses
+            ips.sort(function (a, b) {
+                return ipToNumber(a) - ipToNumber(b);
+            });
+
+            // Update the textarea with the sorted IP addresses
+            extractedip.value = ips.join('\n');
+
+        }
+
+        function combineIPRanges() {
+            var textInput = document.getElementById('extractedip');
+            var textOutput = document.getElementById('textoutputRange');
+            var ips = textInput.value.split('\n').filter(function (ip) {
+                return ip.trim() !== '';
+            });
+
+            // Sort the IP addresses
+            ips.sort(function (a, b) {
+                return ipToNumber(a) - ipToNumber(b);
+            });
+
+            var combinedIPs = [];
+            var combinedClassC = [];
+            var combinedClassB = [];
+            var currentRange = [];
+            var currentRangeC = [];
+
+            for (var i = 0; i < ips.length; i++) {
+                var currentIP = ips[i];
+
+                if (currentRange.length === 0) {
+                    currentRange.push(currentIP);
+                    currentRangeC.push(currentIP);
+                } else {
+                    var previousIP = currentRange[currentRange.length - 1];
+                    var currentParts = currentIP.split('.');
+                    var previousParts = previousIP.split('.');
+
+                    if (currentParts[0] === previousParts[0] && currentParts[1] === previousParts[1] && currentParts[2] === previousParts[2]) {
+                        currentRange.push(currentIP);
+                    } else {
+                        combinedIPs.push(getIPRange(currentRange));
+                        combinedClassC.push(getIPClassC(currentRange));
+                        currentRange = [currentIP];
+                    }
+
+
+                }
+            }
+
+            // Push the last IP range
+            combinedIPs.push(getIPRange(currentRange));
+            combinedClassC.push(getIPClassC(currentRange));
+
+            currentRange = [];
+            for (var i = 0; i < combinedClassC.length; i++) {
+                var currentIP = combinedClassC[i];
+
+                if (currentRange.length === 0) {
+                    currentRange.push(currentIP);
+                } else {
+                    var previousIP = currentRange[currentRange.length - 1];
+                    var currentParts = currentIP.split('.');
+                    var previousParts = previousIP.split('.');
+
+                    if (currentParts[0] === previousParts[0] && currentParts[1] === previousParts[1] && currentParts[2] !== previousParts[2]) {
+                        currentRange.push(currentIP);
+                    } else {
+                        combinedClassB.push(getIPClassB(currentRange));
+                        currentRange = [currentIP];
+                    }
+                }
+            }
+
+            combinedClassB.push(getIPClassC(currentRange));
+
+            // Update the textarea with the combined IP ranges
+            textOutput.value = combinedIPs.join('\n');
+
+            var textOutput = document.getElementById('textoutputClassC');
+            textOutput.value = combinedClassC.join('\n');
+
+            var textOutput = document.getElementById('textoutputClassB');
+            textOutput.value = combinedClassB.join('\n');
+
+        }
+
+        function getIPClassC(ipRange) {
+            if (ipRange.length === 1) {
+                return ipRange[0];
+            } else {
+                // return ipRange[0] + "/24";
+                var currentParts = ipRange[0].split('.');
+                var ipClassC = currentParts[0] + '.' + currentParts[1] + '.' + currentParts[2] + '.0/24';
+
+                return ipClassC;
+            }
+
+        }
+
+        // // Function to generate CIDR notation for Class C IP ranges
+        // function getIPClassc(ipRange) {
+        //     if (ipRange.length === 1) {
+        //         return ipRange[0]; // Single IP address
+        //     } else {
+        //         // Extract the first three octets of the IP address
+        //         var currentParts = ipRange[0].split('.').slice(0, 3);
+        //         var ipClassB = currentParts.join('.') + '.0/24'; // Generate CIDR notation for Class C (assuming /24 subnet mask)
+        //         return ipClassB;
+        //     }
+        // }
+
+        function getIPClassB(ipRange) {
+            if (ipRange.length === 1) {
+                return ipRange[0];
+            } else {
+                // return ipRange[0] + "/16";
+                var currentParts = ipRange[0].split('.');
+                var ipClassB = currentParts[0] + '.' + currentParts[1] + '.0.0/16';
+
+                return ipClassB;
+            }
+
+        }
+
+
+
+        //     // Function to generate CIDR notation for Class B IP ranges
+        // function getIPClassB(ipRange) {
+        //     if (ipRange.length === 1) {
+        //         return ipRange[0]; // Single IP address
+        //     } else {
+        //         // Extract the first two octets of the IP address
+        //         var currentParts = ipRange[0].split('.').slice(0, 2);
+        //         var ipclassB = currentParts.join('.') + '.0.0/16'; // Generate CIDR notation for Class B (assuming /16 subnet mask)
+        //         return ipclassB;
+        //     }
+        // }
+
+        function getIPRange(ipRange) {
+            if (ipRange.length === 1) {
+                return ipRange[0];
+            } else {
+                return ipRange[0] + '-' + ipRange[ipRange.length - 1];
+            }
+        }
+
+        // Helper function to convert IP address to a numeric value
+        function ipToNumber(ip) {
+            var parts = ip.split('.');
+            var number = 0;
+            for (var i = 0; i < parts.length; i++) {
+                number = number * 256 + parseInt(parts[i], 10);
+            }
+            return number;
+        }
+
+        var combineButton = document.getElementById('combineButton');
+        combineButton.addEventListener('click', function () {
+            combineIPRanges();
+            // Update the IP count
+            var countElement = document.getElementById('outcountRange');
+            countElement.textContent = countIPAddresses("textoutputRange");
+
+            // Update the IP count
+            var countElement = document.getElementById('outcountClassC');
+            countElement.textContent = countIPAddresses("textoutputClassC");
+
+            // Update the IP count
+            var countElement = document.getElementById('outcountClassB');
+            countElement.textContent = countIPAddresses("textoutputClassB");
+        });
+
+        // var sellectButton = document.getElementById('selectAll');
+        // sellectButton.addEventListener('click', function () {
+        //     var textOutput = document.getElementById('textoutput');
+        //     textOutput.select();
+        // });
+
+        var copyButton = document.getElementById('copyToClipboardRange');
+        copyButton.addEventListener('click', function () {
+            copyToClipboard('textoutputRange');
+            var textOutput = document.getElementById('textoutputRange');
+            textOutput.style.background = 'orange';
+        });
+
+        var copyButton = document.getElementById('copyToClipboardClassC');
+        copyButton.addEventListener('click', function () {
+            copyToClipboard('textoutputClassC');
+            var textOutput = document.getElementById('textoutputClassC');
+            textOutput.style.background = 'orange';
+        });
+
+        var copyButton = document.getElementById('copyToClipboardClassB');
+        copyButton.addEventListener('click', function () {
+            copyToClipboard('textoutputClassB');
+            var textOutput = document.getElementById('textoutputClassB');
+            textOutput.style.background = 'orange';
+        });
+
+        function copyToClipboard(idoutput) {
+            var textOutput = document.getElementById(idoutput);
+            textOutput.select();
+            document.execCommand("copy");
+        }
+
+        var copyButton = document.getElementById('copyRange');
+        copyButton.addEventListener('click', function () {
+            copyRange('textoutputRange', '-');
+            var textOutput = document.getElementById('textoutputRange');
+            textOutput.style.background = 'orange';
+        });
+
+        var copyButton = document.getElementById('copyCIDR');
+        copyButton.addEventListener('click', function () {
+            copyRange('textoutputClassB', '/');
+            var textOutput = document.getElementById('textoutputClassB');
+            textOutput.style.background = 'orange';
+        });
+
+        var copyButton = document.getElementById('copyClassC');
+        copyButton.addEventListener('click', function () {
+            copyRange('textoutputClassC', '/');
+            var textOutput = document.getElementById('textoutputClassC');
+            textOutput.style.background = 'orange';
+        });
+
+        function copyRange(idoutput, rangeChar) {
+            var textOutput = document.getElementById(idoutput);
+            var lines = textOutput.value.split('\n');
+
+            // Filter lines containing CIDR notations (e.g., lines with '/' character)
+            var cidrLines = lines.filter(function (line) {
+                return line.includes(rangeChar);
+            });
+
+            // Create a temporary textarea to copy only CIDR lines
+            var tempTextArea = document.createElement('textarea');
+            tempTextArea.value = cidrLines.join('\n');
+            document.body.appendChild(tempTextArea);
+
+            // Select and copy the content from the temporary textarea
+            tempTextArea.select();
+            document.execCommand('copy');
+
+            // Remove the temporary textarea
+            document.body.removeChild(tempTextArea);
+        }
+
+
+
+        var textInput = document.getElementById('textinput');
+        textInput.addEventListener('input', () => {
+            // Update the IP count
+            var countElement = document.getElementById('incount');
+            countElement.textContent = countIPAddresses("textinput");
+        });
+
+        var textInput = document.getElementById('extractedip');
+        textInput.addEventListener('input', () => {
+            updateResult();
+        });
+
+        function updateResult() {
+            var textOutput = document.getElementById('textoutputRange');
+            textOutput.style.background = "none";
+            var textOutput = document.getElementById('textoutputClassC');
+            textOutput.style.background = "none";
+            var textOutput = document.getElementById('textoutputClassB');
+            textOutput.style.background = "none";
+            // Update the IP count
+            var countElement = document.getElementById('extractedcount');
+            countElement.textContent = countIPAddresses("extractedip");
+        }
+
+
+
+        function countIPAddresses(textarea) {
+            var textinput = document.getElementById(textarea);
+            var ips = textinput.value.split('\n').filter(function (ip) {
+                return ip.trim() !== '';
+            });
+            var ipCount = ips.length;
+
+            console.log('Number of IPs:', ipCount);
+            return ipCount;
+        }
+
+    </script>
+</body>
+
+</html>

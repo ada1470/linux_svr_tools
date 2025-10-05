@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>List Converter</title>
+  <style>
+    /* CSS styles */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    .input-output {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .input,
+    .output {
+      flex: 1;
+    }
+
+    textarea {
+      width: calc(100% - 10px);
+      height: 400px;
+      margin-bottom: 10px;
+    }
+
+    select {
+      width: 100%;
+      margin-bottom: 10px;
+      height: 40px;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px 0;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>List Converter</h1>
+
+    <div class="input-output">
+      <div class="input">
+        <label for="inputList">Input:</label>
+        <textarea id="inputList" placeholder="Enter a list or string"></textarea>
+        <label for="inputSeparator">Choose input separator:</label>
+        <select id="inputSeparator">
+          <option value=",">Comma (,)</option>
+          <option value=";">Semicolon (;)</option>
+          <option value="-">Hyphen (-)</option>
+          <option value="|">Pipe (|)</option>
+          <option value=" ">Space ( )</option>
+          <option value="、">China Style Comma (、)</option>
+          <option value="','">Array elements (',')</option>
+          <option value="&quot;,&quot;">Array elements (&quot;,&quot;)</option>
+          <option value="\n">Line break</option>
+          <!-- Add more options if needed -->
+        </select>
+        <label for="outputSeparator">Choose output separator:</label>
+        <select id="outputSeparator">
+          <option value=",">Comma (,)</option>
+          <option value=";">Semicolon (;)</option>
+          <option value="-">Hyphen (-)</option>
+          <option value="|">Pipe (|)</option>
+          <option value=" ">Space ( )</option>
+          <option value="、">China Style Comma (、)</option>
+          <option value="','">Array elements (',')</option>
+          <option value="&quot;,&quot;">Array elements (&quot;,&quot;)</option>
+          <option value="\n">Line break</option>
+          <!-- Add more options if needed -->
+        </select>
+        <label for="addLineBreaks">Add line breaks:</label>
+        <input type="checkbox" id="addLineBreaks">
+      </div>
+
+      <div class="output">
+        <label for="output">Output:</label>
+        <textarea id="output" placeholder="Converted output will appear here" readonly></textarea>
+        <button onclick="convert()">Convert</button>
+        <button onclick="copyResult()">Copy Result</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function convert() {
+      let inputList = document.getElementById('inputList').value;
+      const inputSeparator = document.getElementById('inputSeparator').value;
+      const outputSeparator = document.getElementById('outputSeparator').value;
+      const output = document.getElementById('output');
+      const addLineBreaks = document.getElementById('addLineBreaks');
+
+
+      if (inputList.includes(inputSeparator) && inputSeparator !== "\\n") {
+        // Remove linebreak characters
+        inputList = inputList.replace(/\n/g, '');
+      }
+
+      // Convert input to list using line breaks
+      const listArray = inputList.split(inputSeparator)
+
+      var strOutput = "";
+      if (addLineBreaks.checked) {
+        strOutput = listArray.join(outputSeparator + "\n");
+      } else {
+        strOutput = listArray.join(outputSeparator);
+        if (strOutput.includes("\\n")) {
+          strOutput = strOutput.replace(/\\n/g, '\n');
+        }
+
+      }
+      output.value = strOutput;
+
+    }
+
+    function copyResult() {
+      const output = document.getElementById('output');
+      output.select();
+      document.execCommand('copy');
+      alert('Copied to clipboard!');
+    }
+
+    function checkLineBreak() {
+      const outputSeparator = document.getElementById('outputSeparator').value;
+      const addLineBreaks = document.getElementById('addLineBreaks');
+
+      if (outputSeparator === "\\n" || outputSeparator === "','" || outputSeparator === "\",\"") {
+        addLineBreaks.disabled = true;
+      } else {
+        addLineBreaks.disabled = false;
+      }
+    }
+
+    // Add event listeners to select elements to check line breaks
+    document.getElementById('outputSeparator').addEventListener('change', checkLineBreak);
+  </script>
+</body>
+
+</html>

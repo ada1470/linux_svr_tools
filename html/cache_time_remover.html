@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Cache Remover</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f2f2f2;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+    }
+
+    .controls {
+      display: flex;
+    }
+
+    .controls div {
+      /* margin-left: 20px; */
+      width: 100%;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .label {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .textarea {
+      width: 100%;
+      height: 120px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      resize: vertical;
+    }
+
+    .button-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 20px;
+    }
+
+    #copyButton {
+      margin-left: 10px;
+    }
+
+    #copyNotification {
+      margin-top: 10px;
+      text-align: center;
+      color: green;
+    }
+
+    button {
+      display: block;
+      margin-top: 10px;
+      padding: 8px 12px;
+      border: none;
+      background-color: #4caf50;
+      color: #fff;
+      font-size: 14px;
+      font-weight: bold;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    select {
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    /* Optional styles for dropdown arrow */
+    select::-ms-expand {
+      display: none;
+    }
+
+    select::after {
+      content: '\25BC';
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      pointer-events: none;
+    }
+
+    /* Optional hover/focus styles */
+    select:hover,
+    select:focus {
+      border-color: #888;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Cache Remover</h1>
+
+    <div class="controls">
+
+
+      <div>
+        <label for="program">Choose a program:</label>
+        <select name="program" id="program">
+          <option value="film.com">film.com</option>
+          <option value="film222.com">film222.com</option>
+          <option value="fanmulu.com/public">fanmulu.com</option>
+          <option value="fanmulu999.com/public">fanmulu999.com</option>
+          <option value="fanmulu4tao.com/public">fanmulu4tao.com</option>
+          <option value="fanmulujk.com/public">fanmulujk.com</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="datepicker">Select a date:</label>
+        <input type="date" id="datepicker">
+      </div>
+      <div>
+        <input type="radio" id="earlier" name="dateChoice" value="earlier" checked>
+        <label for="earlier">Remove files that earlier than selected date</label>
+        <input type="radio" id="later" name="dateChoice" value="later">
+        <label for="later">Remove files that later than selected date</label>
+      </div>
+    </div>
+
+    <div class="button-container">
+      <button id="convertButton">Convert</button>
+      <button id="copyButton">Copy Result</button>
+    </div>
+    <div id="result">
+      <label class="label">Converted Output</label>
+      <textarea class="textarea" id="output" readonly></textarea>
+      <p id="copyNotification"></p>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('convertButton').addEventListener('click', function () {
+      var program = document.getElementById('program').value;
+
+      // Get the selected date from the datepicker
+      var selectedDate = document.getElementById('datepicker').value;
+
+
+
+      // Convert the selected date to a UNIX timestamp
+      var selectedTimestamp = new Date(selectedDate).getTime() / 1000;
+
+      // Determine whether to check for files earlier or later than the selected date
+      var dateChoice = document.querySelector('input[name="dateChoice"]:checked').value;
+
+      // Determine the sign for the mtime parameter based on the dateChoice
+      var mtimeSign = (dateChoice === 'earlier') ? '+' : '-';
+
+      // Calculate the difference in days between the selected date and the current date
+      var currentDate = new Date();
+
+      // Check if the selected date is empty
+      if (!selectedDate) {
+        alert("Please input a valid date!");
+        return;
+      }
+
+      var currentDateTimestamp = currentDate.getTime() / 1000;
+
+      // Check if the selected date is in the future
+      if (selectedTimestamp > currentDateTimestamp) {
+        alert("Cannot remove files in the future!");
+        return;
+      }
+
+      var daysDifference = Math.round((currentDateTimestamp - selectedTimestamp) / (60 * 60 * 24));
+
+      // Construct the -mtime parameter
+      var mtimeParameter = mtimeSign + daysDifference;
+
+      // Construct the find command
+      var stroutput = 'find /home/www/wwwroot/' + program + '/site/*/cache \\\n';
+      stroutput += '-type f \\\n'; // Change -type d to -type f to target files instead of directories
+      stroutput += '-mtime ' + mtimeParameter + ' \\\n';
+      stroutput += '-exec rm -rfv {} + 2>/dev/null';
+
+
+
+      // Set the output text
+      var outputTextArea = document.getElementById('output');
+      outputTextArea.value = stroutput;
+
+      // Check if the output contains special characters and change background color accordingly
+      console.log(stroutput);
+      if (/[^a-zA-Z0-9\/ *\.\\\-\s+{}>]/.test(stroutput)) {
+        outputTextArea.style.backgroundColor = 'red';
+      } else {
+        outputTextArea.style.backgroundColor = 'green';
+      }
+    });
+
+    var copyButton = document.getElementById('copyButton');
+    copyButton.addEventListener('click', function () {
+      var outputTextArea = document.getElementById('output');
+      outputTextArea.select();
+      document.execCommand('copy');
+      alert('Result has been copied to the clipboard!');
+    });
+
+    // Get the datepicker element
+    var datepicker = document.getElementById('datepicker');
+    var outputTextArea = document.getElementById('output');
+    
+    // Add event listener for the change event
+    datepicker.addEventListener('change', function () {
+      console.log('changed');
+      // Remove background color
+      outputTextArea.style.backgroundColor = 'transparent';
+    });
+
+
+  </script>
+
+</body>
+
+</html>

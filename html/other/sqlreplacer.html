@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Update Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        label {
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>SQL Update Generator</h2>
+        <div>
+            <label for="tableName">Input Table:</label>
+            <input type="text" id="tableName" placeholder="Table Name">
+        </div>
+        <div>
+            <label for="columnName">Input Column:</label>
+            <input type="text" id="columnName" placeholder="Column Name">
+        </div>
+        <div>
+            <label for="oldValue">Old Value:</label>
+            <input type="text" id="oldValue" placeholder="Old Value">
+        </div>
+        <div>
+            <label for="newValue">New Value:</label>
+            <input type="text" id="newValue" placeholder="New Value">
+        </div>
+        <div>
+            <label for="sqlResult">Generated SQL Update:</label>
+            <textarea id="sqlResult" readonly></textarea>
+        </div>
+        <button onclick="generateSQL()">Generate SQL</button>
+        <button onclick="copyToClipboard()">Copy SQL</button>
+    </div>
+
+    <script>
+        function generateSQL() {
+            var tableName = document.getElementById('tableName').value;
+            var columnName = document.getElementById('columnName').value;
+            var oldValue = document.getElementById('oldValue').value;
+            var newValue = document.getElementById('newValue').value;
+
+            var sqlQuery = `UPDATE ${tableName} SET ${columnName} = REPLACE(${columnName}, '${oldValue}', '${newValue}') WHERE ${columnName} LIKE '%${oldValue}%';`;
+
+            document.getElementById('sqlResult').value = sqlQuery;
+        }
+
+        function copyToClipboard() {
+            var sqlResult = document.getElementById('sqlResult');
+            sqlResult.select();
+            document.execCommand('copy');
+            alert('SQL Query copied to clipboard!');
+        }
+    </script>
+</body>
+</html>

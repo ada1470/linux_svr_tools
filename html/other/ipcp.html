@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>IP Address Comparison</title>
+    <style>
+        .container {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 10px;
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* height: 100vh; */
+            padding-bottom: 60px;
+        }
+
+        h1 {
+            text-align: center;
+            background-color: #333;
+            color: #fff;
+            padding: 10px;
+        }
+
+        .main {
+            display: flex;
+            justify-content: space-between;
+            margin: 20px;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 80%;
+        }
+
+        .column {
+            flex: 1;
+            padding: 15px;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+            resize: none;
+        }
+
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #333;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #111;
+        }
+
+        /* (CSS styles remain unchanged) */
+        .highlight {
+            background-color: yellow;
+            /* You can change the highlight color here */
+        }
+
+        #compareButton {
+            padding: 20px 90px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>IP Address Comparison</h1>
+    <div class="container">
+        <div class="main">
+            <div class="column">
+                <h2>Source IP List (CDN)</h2>
+                <textarea id="sourceList" rows="10" cols="30"></textarea>
+                <p>Total IPs: <span id="sourceCount">0</span></p>
+            </div>
+            <div class="column">
+                <h2>Target IP List</h2>
+                <textarea id="targetList" rows="10" cols="30"></textarea>
+                <p>Total IPs: <span id="targetCount">0</span></p>
+            </div>
+            <div class="column">
+                <h2>Non-Matching IP List</h2>
+                <textarea id="nonMatchingList" rows="10" cols="30" readonly></textarea>
+                <p>Total IPs: <span id="nonMatchingCount">0</span></p>
+                <button id="copyNonMatchingButton">Copy Non-Matching IPs</button>
+
+            </div>
+        </div>
+    </div>
+    <div class="container">
+        <button id="compareButton">Compare</button>
+    </div>
+
+    <script>
+        const sourceListTextarea = document.getElementById('sourceList');
+        const targetListTextarea = document.getElementById('targetList');
+        const nonMatchingListTextarea = document.getElementById('nonMatchingList');
+        const sourceCountSpan = document.getElementById('sourceCount');
+        const targetCountSpan = document.getElementById('targetCount');
+        const nonMatchingCountSpan = document.getElementById('nonMatchingCount');
+
+        // Function to update the total IP count for Source IP List
+        function updateSourceIPCount() {
+            const sourceList = sourceListTextarea.value.split('\n');
+            sourceCountSpan.textContent = sourceList.length;
+            localStorage.setItem('sourceIPList', sourceListTextarea.value);
+        }
+
+        // Load the previously entered source IP list from localStorage
+        const storedSourceList = localStorage.getItem('sourceIPList');
+        if (storedSourceList) {
+            sourceListTextarea.value = storedSourceList;
+        }
+
+        // Call the function to count source IPs on page load
+        updateSourceIPCount();
+
+        // Update the total IP count for Source IP List on input change
+        sourceListTextarea.addEventListener('input', updateSourceIPCount);
+
+
+        // Update the total IP count for Target IP List
+        targetListTextarea.addEventListener('input', () => {
+            const targetList = targetListTextarea.value.split('\n');
+            targetCountSpan.textContent = targetList.length;
+        });
+
+        // (Comparison functionality remains unchanged)
+    </script>
+
+    <script>
+
+        // Handle the comparison when the Compare button is clicked
+        const compareButton = document.getElementById('compareButton');
+        compareButton.addEventListener('click', () => {
+            const sourceList = sourceListTextarea.value.split('\n');
+            const targetList = targetListTextarea.value.split('\n');
+
+            // Compare the lists and find common IPs
+            const commonIPs = sourceList.filter(ip => targetList.includes(ip));
+
+            // Find non-matching IPs (from Target)
+            const nonMatchingIPs = targetList.filter(ip => !commonIPs.includes(ip));
+
+            // Display non-matching IPs (from Target) in the third textarea
+            nonMatchingListTextarea.value = nonMatchingIPs.join('\n');
+            nonMatchingCountSpan.textContent = nonMatchingIPs.length;
+
+            // Highlight matching IPs in Target IP List
+            targetListTextarea.value = targetListTextarea.value.split('\n').map(ip => {
+                if (commonIPs.includes(ip)) {
+                    // return `<span class="highlight">${ip}</span>`;
+                    return `${ip}\t(matched)`;
+                }
+                return ip;
+            }).join('\n');
+
+            targetListTextarea.style.backgroundColor = "beige";
+        });
+    </script>
+
+    <script>
+        // Function to copy non-matching IPs to clipboard
+        const copyNonMatchingButton = document.getElementById('copyNonMatchingButton');
+        copyNonMatchingButton.addEventListener('click', () => {
+            const nonMatchingList = nonMatchingListTextarea.value;
+            if (nonMatchingList) {
+                navigator.clipboard.writeText(nonMatchingList)
+                    .then(() => {
+                        alert('Non-matching IPs copied to clipboard!');
+                    })
+                    .catch(err => {
+                        console.error('Error copying IPs: ', err);
+                    });
+            } else {
+                alert('There are no non-matching IPs to copy.');
+            }
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Random Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+
+        h1 {
+            background-color: #333;
+            color: #fff;
+            text-align: center;
+            padding: 10px 0;
+            margin-top: 0;
+        }
+
+        h2 {
+            background-color: #333;
+            color: #fff;
+            padding: 5px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        label {
+            display: block;
+            margin: 10px 0;
+            font-size: large;
+            display: flex;
+            align-items: center;
+        }
+
+        input {
+            font-size: large;
+        }
+
+        input[type="number"] {
+            width: 100%;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+
+        input[type="checkbox"] {
+            margin-right: 5px;
+            width: 40px;
+            height: 40px;
+        }
+
+        button {
+            background-color: #333;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #555;
+        }
+
+        p {
+            margin-top: 10px;
+        }
+
+        .option {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+
+        .selection {
+            display: flex;
+            align-items: center;
+        }
+
+        .selection label {
+            min-width: 300px;
+            text-align: right;
+        }
+
+        .selection input {
+            order: -1;
+        }
+
+        #randomString,
+        #randomNumber {
+            border: 1px dashed gray;
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        #randomString:hover,
+        #randomNumber:hover {
+            background-color: #333;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div>
+        <h1>Random Generator</h1>
+    </div>
+
+    <div class="container">
+        <section>
+            <h2>Generate Random Number</h2>
+            <label for="min">Min Value:</label>
+            <input type="number" id="min" value="49152">
+            <label for="max">Max Value:</label>
+            <input type="number" id="max" value="65535">
+            <button onclick="generateRandomNumber()">Generate Number</button>
+            <p id="randomNumber"></p>
+        </section>
+
+        <section>
+            <h2>Generate Random String</h2>
+            <label for="stringLength">String Length:</label>
+            <input type="number" id="stringLength" value="16">
+            <label>String Options:</label>
+            <div class="option">
+                <div class="selection">
+                    <input type="checkbox" id="number" value="number">
+                    <label for="number">Numbers</label>
+                </div>
+                <div class="selection">
+                    <input type="checkbox" id="lowercase" value="lowercase">
+                    <label for="lowercase">Lowercase</label>
+                </div>
+                <div class="selection">
+                    <input type="checkbox" id="uppercase" value="uppercase">
+                    <label for="uppercase">Uppercase</label>
+                </div>
+                <div class="selection">
+                    <input type="checkbox" id="special" value="special">
+                    <label for="special">Special Characters</label>
+                </div>
+            </div>
+            <div class="controls">
+                <button onclick="generateRandomString()">Generate String</button>
+                <p id="randomString"></p>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        function generateRandomNumber() {
+            const min = parseInt(document.getElementById("min").value);
+            const max = parseInt(document.getElementById("max").value);
+            const randomNumber = Math.floor(Math.random() * (max - min + 1)) + min;
+            document.getElementById("randomNumber").textContent = `Random Number: ${randomNumber}`;
+        }
+
+        function generateRandomString() {
+            const length = parseInt(document.getElementById("stringLength").value);
+            const number = document.getElementById("number").checked;
+            const uppercase = document.getElementById("uppercase").checked;
+            const lowercase = document.getElementById("lowercase").checked;
+            const special = document.getElementById("special").checked;
+
+            // Check if no options are selected
+            if (!(number || uppercase || lowercase || special)) {
+                alert("Please select at least one option.");
+                return;
+            }
+
+            let charset = "";
+
+            if (number) {
+                charset += "0123456789";
+            }
+            if (uppercase) {
+                charset += "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            }
+            if (lowercase) {
+                charset += "abcdefghijklmnopqrstuvwxyz";
+            }
+            if (special) {
+                charset += "!@#$%^&*_+,.?";
+            }
+
+            let randomString = "";
+            for (let i = 0; i < length; i++) {
+                const randomIndex = Math.floor(Math.random() * charset.length);
+                randomString += charset.charAt(randomIndex);
+            }
+
+            document.getElementById("randomString").textContent = `Random String: ${randomString}`;
+
+            document.getElementById("randomString").textContent = `Random String: ${randomString}`;
+
+
+        }
+
+        const randomNumberElement = document.getElementById("randomNumber");
+        randomNumberElement.addEventListener("click", function () {
+            const textToCopy = randomNumberElement.textContent.split(": ")[1];
+            if (typeof (textToCopy) == 'undefined') {
+                alert('Generate first!');
+            } else {
+                navigator.clipboard.writeText(textToCopy)
+                    .then(() => {
+                        alert(`Copied '${textToCopy}' to clipboard!`);
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy: ', err);
+                    });
+            }
+
+        });
+
+        const randomStringElement = document.getElementById("randomString");
+        randomStringElement.addEventListener("click", function () {
+            const textToCopy = randomStringElement.textContent.split(": ")[1];
+
+            if (typeof (textToCopy) == 'undefined') {
+                alert('Generate first!');
+            } else {
+                navigator.clipboard.writeText(textToCopy)
+                    .then(() => {
+                        alert(`Copied '${textToCopy}' to clipboard!`);
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy: ', err);
+                    });
+            }
+        });
+
+        const inputElems = document.getElementsByTagName("input");
+        for (let i = 0; i < inputElems.length; i++) {
+            inputElems[i].addEventListener("click", function () {
+                this.select();
+            });
+        }
+
+
+    </script>
+</body>
+
+</html>

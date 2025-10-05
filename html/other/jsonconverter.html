@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON to Key-Value Display</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #output {
+            margin-top: 20px;
+            white-space: pre-wrap; /* Preserve whitespace */
+        }
+        button {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>JSON to Key-Value Display</h1>
+    <textarea id="jsonInput" rows="10" style="width: 100%;" placeholder="Enter JSON here..."></textarea>
+    <button onclick="displayKeyValue()">Display Key-Value</button>
+
+    <div id="output"></div>
+    <button id="copyButton" style="display:none;" onclick="copyToClipboard()">Copy to Clipboard</button>
+
+    <script>
+        function displayKeyValue() {
+            const jsonInput = document.getElementById('jsonInput').value;
+            const output = document.getElementById('output');
+            const copyButton = document.getElementById('copyButton');
+            output.innerHTML = ''; // Clear previous output
+            copyButton.style.display = 'none'; // Hide copy button initially
+
+            try {
+                const jsonObject = JSON.parse(jsonInput);
+                let result = '';
+
+                for (const key in jsonObject) {
+                    if (jsonObject.hasOwnProperty(key)) {
+                        result += `${key}\t:\t${jsonObject[key]}\n`;
+                    }
+                }
+
+                output.textContent = result; // Display result
+                if (result.trim() !== '') {
+                    copyButton.style.display = 'inline'; // Show copy button if there's output
+                }
+            } catch (e) {
+                alert('Invalid JSON');
+            }
+        }
+
+        function copyToClipboard() {
+            const output = document.getElementById('output');
+            const textArea = document.createElement('textarea');
+            textArea.value = output.textContent;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            alert('Copied to clipboard!');
+        }
+    </script>
+</body>
+</html>

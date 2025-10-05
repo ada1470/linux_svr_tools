@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Var Dump Parser</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .input-field {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .output-field {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Var Dump Parser</h1>
+        <textarea id="inputField" class="input-field" placeholder="Paste your var_dump output here"></textarea>
+        <button id="parseButton" class="button">Parse</button>
+        <textarea id="outputField" class="output-field" readonly></textarea>
+        <button id="copyButton" class="button">Copy</button>
+    </div>
+    <script>
+        const inputField = document.getElementById('inputField');
+        const outputField = document.getElementById('outputField');
+        const parseButton = document.getElementById('parseButton');
+        const copyButton = document.getElementById('copyButton');
+
+        parseButton.addEventListener('click', () => {
+            const input = inputField.value;
+
+            // Extract the data within curly braces
+            let dataString = "";
+            const match = input.match(/\{(.*)\}/); // Regex to find content within curly braces
+            if (match) {
+                dataString = match[1]; // Capture the content within the first curly braces
+            }
+
+            // Parse the extracted data
+            let output = "";
+            try {
+                const data = JSON.parse(dataString);
+
+                // Format the parsed data with indentation
+                output = formatArray(data, 0);
+            } catch (error) {
+                output = "Invalid var_dump format or error parsing JSON.";
+            }
+
+            outputField.value = output;
+        });
+
+        function formatArray(data, indentLevel) {
+            let formattedData = "array(" + data.length + ") {\n";
+            for (const key in data) {
+                const value = data[key];
+                const indent = "  ".repeat(indentLevel + 1);
+                formattedData += indent + '"' + key + '" => ' + formatValue(value, indentLevel + 1) + "\n";
+            }
+            formattedData += "  ".repeat(indentLevel) + "}";
+            return formattedData;
+        }
+
+        function formatValue(value, indentLevel) {
+            if (typeof value === "object") {
+                return formatArray(value, indentLevel);
+            } else if (typeof value === "string") {
+                return '"' + value + '"';
+            } else {
+                return value + ""; // Convert number to string
+            }
+        }
+
+        copyButton.addEventListener('click', () => {
+            const output = outputField.value;
+            navigator.clipboard.writeText(output).then(() => {
+                alert("Copied to clipboard!");
+            }, () => {
+                alert("Failed to copy to clipboard!");
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+# #!/bin/bash
+
+install_jq() {
+  if [ -f /etc/centos-release ]; then
+    sudo yum install -y epel-release
+    sudo yum install -y jq
+  elif [ -f /etc/lsb-release ] || grep -qi ubuntu /etc/os-release; then
+    sudo apt update
+    sudo apt install -y jq
+  else
+    echo "Unsupported OS. Please install jq manually."
+    exit 1
+  fi
+}
+
+# Check if jq exists
+if ! command -v jq > /dev/null 2>&1; then
+  echo "jq not found, installing..."
+  install_jq || {
+    echo "Install failed, checking /usr/bin/jq immutability..."
+    sudo chattr -i /usr/bin 2>/dev/null
+    install_jq || {
+      echo "jq install failed after removing immutability. Please check manually."
+      exit 1
+    }
+  }
+fi
+
+# # Prepare IP JSON
+hostname -I | awk '{for(i=1;i<=NF;i++) print $i}' | jq -R . | jq -s '{ips: .}' > ips.json
+
+# # Send to Svr A
+# curl -X POST \
+#   -H "Content-Type: application/json" \
+#   -H "X-API-KEY: MY_SUPER_SECRET_KEY_123456" \
+#   -d @ips.json \
+#   http://162.209.200.138:60000/curl-check
+
+
+# # Colors
+# GREEN='\033[0;32m'
+# RED='\033[0;31m'
+# NC='\033[0m'
+
+# # Adjusted widths: Status to 11 chars, HTTP Code 9, Time 8 (you can tweak as needed)
+# printf "\n%-18s | %-11s | %-9s | %-8s\n" "IP Address" "Status" "HTTP Code" "Time(s)"
+# printf "%-18s-+-%-11s-+-%-9s-+-%-8s\n" "------------------" "-----------" "---------" "--------"
+
+# curl -s -X POST \
+#   -H "Content-Type: application/json" \
+#   -H "X-API-KEY: MY_SUPER_SECRET_KEY_123456" \
+#   -d @ips.json \
+#   http://162.209.200.138:60000/curl-check | while read -r line; do
+  
+#   # Skip or show errors cleanly
+#   if ! echo "$line" | jq -e '.ip' > /dev/null 2>&1; then
+#     echo "⚠ Unexpected response: $line"
+#     continue
+#   fi
+  
+#   ip=$(echo "$line" | jq -r '.ip')
+#   status_raw=$(echo "$line" | jq -r '.status')
+#   code=$(echo "$line" | jq -r '.http_code')
+#   time=$(echo "$line" | jq -r '.time_total_s')
+
+#   # Color status
+#   if [ "$status_raw" == "OK" ]; then
+#     status="${GREEN}${status_raw}${NC}"
+#   else
+#     status="${RED}${status_raw}${NC}"
+#   fi
+
+#   printf "%-18s | %-11b | %-9s | %-8s\n" "$ip" "$status" "$code" "$time"
+
+# done
+
+#!/bin/bash
+
+# Colors
+GREEN='\033[0;32m'
+RED='\033[0;31m'
+NC='\033[0m'
+
+# Temp file for failed IPs
+failed_log=$(mktemp)
+
+# Print header
+printf "\n%-18s | %-11s | %-9s | %-8s\n" "IP Address" "Status" "HTTP Code" "Time(s)"
+printf "%-18s-+-%-11s-+-%-9s-+-%-8s\n" "------------------" "-----------" "---------" "--------"
+
+curl -s -X POST \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: MY_SUPER_SECRET_KEY_123456" \
+  -d @ips.json \
+  http://162.209.200.138:60000/curl-check | while read -r line; do
+
+  # Validate JSON with 'ip'
+  if echo "$line" | jq -e 'has("ip")' > /dev/null 2>&1; then
+    ip=$(echo "$line" | jq -r '.ip')
+    status_raw=$(echo "$line" | jq -r '.status')
+    code=$(echo "$line" | jq -r '.http_code // "null"')
+    time=$(echo "$line" | jq -r '.time_total_s // "null"')
+
+    # Log if http_code is null or 000
+    if [ "$code" = "null" ] || [ "$code" = "000" ]; then
+      echo "$ip" >> "$failed_log"
+    fi
+
+    # Color status
+    if [ "$status_raw" == "OK" ]; then
+      status="${GREEN}${status_raw}${NC}"
+    else
+      status="${RED}${status_raw}${NC}"
+    fi
+
+    # printf "%-18s | %-11b | %-9s | %-8s\n" "$ip" "$status" "$code" "$time"
+    # line=$(printf "%-18s | %-11s | %-9s | %-8s" "$ip" "$status_raw" "$code" "$time")
+
+    # if [ "$status_raw" = "OK" ]; then
+    #   line="${line/ $status_raw / ${GREEN}${status_raw}${NC} }"
+    # else
+    #   line="${line/ $status_raw / ${RED}${status_raw}${NC} }"
+    # fi
+    
+    # echo -e "$line"
+    # Build plain line (no color yet, for alignment)
+    line=$(printf "%-18s | %-11s | %-9s | %-8s" "$ip" "$status_raw" "$code" "$time")
+    
+    # Color HTTP code
+    if [ "$code" = "null" ] || [ "$code" = "000" ]; then
+      code_colored="${RED}${code}${NC}"
+    elif [ "$code" = "200" ]; then
+      code_colored="${GREEN}${code}${NC}"
+    else
+      code_colored="\033[0;33m${code}${NC}"  # orange (yellow)
+    fi
+    
+    # Color time
+    if [[ "$time" =~ ^[0-9]*\.?[0-9]+$ ]]; then
+        # Numeric time
+        if awk "BEGIN {exit !($time < 1)}"; then
+          time_colored="${GREEN}${time}${NC}"
+        elif awk "BEGIN {exit !($time < 5)}"; then
+          time_colored="\033[0;33m${time}${NC}"
+        else
+          time_colored="${RED}${time}${NC}"
+        fi
+
+    else
+      # Non-numeric time (null, >10, etc)
+      time_colored="${RED}${time}${NC}"
+    fi
+    
+    # Color status
+    if [ "$status_raw" = "OK" ]; then
+      status_colored="${GREEN}${status_raw}${NC}"
+    else
+      status_colored="${RED}${status_raw}${NC}"
+    fi
+    
+    # Replace fields in line
+    line="${line/ $status_raw / ${status_colored} }"
+    line="${line/ $code / ${code_colored} }"
+    line="${line/ $time / ${time_colored} }"
+    
+    echo -e "$line"
+
+
+  else
+    echo "⚠ Unexpected response: $line"
+  fi
+
+done
+
+# Print failed list at the end
+if [ -s "$failed_log" ]; then
+  echo -e "\n⚠ The following IPs had no valid HTTP code (null or 000):"
+  cat "$failed_log"
+else
+  echo -e "\n✅ All IPs returned valid HTTP codes."
+fi
+
+# Clean up
+rm "$failed_log"
+
+
+

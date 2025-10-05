@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Editor with Formatting and Copy Feature</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/styles/github.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        .editor-container {
+            position: relative;
+        }
+
+        .editor {
+            width: 100%;
+            height: 200px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            outline: none;
+            overflow-y: auto;
+            /* Enable scroll for overflowing content */
+        }
+
+        .placeholder {
+            color: #999;
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            pointer-events: none;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .output {
+            margin-top: 20px;
+        }
+
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            overflow-x: auto;
+            margin-bottom: 10px;
+            cursor: pointer;
+            /* Indicate the block is clickable */
+        }
+
+        pre.copied {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+
+        .tooltip {
+            position: absolute;
+            background-color: black;
+            color: white;
+            padding: 5px;
+            border-radius: 5px;
+            font-size: 12px;
+            visibility: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Text Editor with Formatting and Copy Feature</h1>
+    <div class="editor-container">
+        <div class="editor" id="editor" contenteditable="true"></div>
+        <div class="placeholder" id="placeholder">Paste or type your text and code here...</div>
+    </div>
+    <button onclick="detectAndFormat()">Detect and Format</button>
+
+    <div class="output" id="output" style="display: none;">
+        <h3>Formatted Output</h3>
+        <div id="formattedContent"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.8.0/highlight.min.js"></script>
+    <script>
+        const editor = document.getElementById('editor');
+        const placeholder = document.getElementById('placeholder');
+
+        // Placeholder behavior
+        editor.addEventListener('focus', () => {
+            if (editor.textContent.trim() === '') {
+                placeholder.style.display = 'none';
+            }
+        });
+
+        editor.addEventListener('blur', () => {
+            if (editor.textContent.trim() === '') {
+                placeholder.style.display = 'block';
+            }
+        });
+
+        editor.addEventListener('input', () => {
+            if (editor.textContent.trim() !== '') {
+                placeholder.style.display = 'none';
+            } else {
+                placeholder.style.display = 'block';
+            }
+        });
+
+        // Code detection logic
+        function isCodeLine(line) {
+            // Common programming and scripting patterns
+            const codePatterns = /[{;}()\[\]=]|>/; // Added `/` and `>` for paths and shell redirection
+            const keywords = /\b(function|const|let|var|if|else|return|class|import|export|java|nohup|install)\b/; // Added shell-specific keywords
+            const shellPatterns = /^\s*(sudo|nohup|java|ls|cd|cat|echo|rm|touch|chmod|chown|>)\b/; // Shell commands
+            return codePatterns.test(line) || keywords.test(line) || shellPatterns.test(line);
+        }
+
+
+        // Detect and format code blocks
+        function detectAndFormat() {
+            const text = editor.innerText;
+            const lines = text.split('\n');
+            const formattedContent = document.getElementById('formattedContent');
+            const outputContainer = document.getElementById('output');
+
+            formattedContent.innerHTML = ''; // Clear previous output
+
+            let currentBlock = [];
+            let isCode = false;
+
+            lines.forEach((line, index) => {
+                const lineIsCode = isCodeLine(line);
+                const isBlank = line.trim() === '';
+
+                if (lineIsCode || (isCode && isBlank)) {
+                    // If it's code or a blank line following a code block
+                    if (!isCode) {
+                        isCode = true;
+                    }
+                    currentBlock.push(line);
+                } else {
+                    // If we encounter a non-code line, finalize the current code block
+                    if (isCode) {
+                        addCodeBlock(formattedContent, currentBlock);
+                        currentBlock = [];
+                        isCode = false;
+                    }
+
+                    // Add non-code line to the output if not blank
+                    if (!isBlank) {
+                        const p = document.createElement('p');
+                        p.textContent = line;
+                        formattedContent.appendChild(p);
+                    }
+                }
+
+                // Handle any remaining code block at the end of the input
+                if (index === lines.length - 1 && isCode) {
+                    addCodeBlock(formattedContent, currentBlock);
+                }
+            });
+
+
+            outputContainer.style.display = 'block';
+        }
+
+        // Helper function to add a code block
+        function addCodeBlock(container, codeLines) {
+            const pre = document.createElement('pre');
+            const code = document.createElement('code');
+            code.textContent = codeLines.join('\n');
+            pre.appendChild(code);
+
+            // Highlight the code
+            hljs.highlightBlock(code);
+
+            // Add click-to-copy functionality
+            pre.addEventListener('click', () => copyCode(pre));
+
+            container.appendChild(pre);
+        }
+
+        // Copy code to clipboard
+        function copyCode(preElement) {
+            const code = preElement.innerText;
+
+            // Copy code to clipboard
+            navigator.clipboard.writeText(code).then(() => {
+                // Add visual feedback
+                preElement.classList.add('copied');
+                setTimeout(() => preElement.classList.remove('copied'), 1000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>HTML Code Editor</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f0f0f0;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        #container {
+            width: 80%;
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007BFF;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #resultOutput {
+            font-size: 16px;
+        }
+
+        #changedContainer {
+            border: 1px solid gray;
+        }
+
+        .highlight {
+            background-color: orange;
+        }
+
+        .control div {
+            margin: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="container">
+        <div class="input">
+            <h1>HTML Code Editor</h1>
+
+            <label for="htmlInput">Input HTML Code:</label>
+            <input type="file" id="htmlFile" accept=".html">
+            <textarea id="htmlInput" rows="6"></textarea>
+        </div>
+
+        <div class="control">
+            <div>
+                <label for="numBegin">Input number begin:</label>
+                <input type="text" id="numBegin">
+            </div>
+
+            <button id="processButton">Process HTML</button>
+        </div>
+
+        <div class="result">
+            <h2>Result:</h2>
+            <div id="resultContainer">
+                <textarea id="resultOutput" rows="6" readonly></textarea>
+            </div>
+
+            <button id="downloadButton">Download HTML</button>
+
+            <h2>Changed:</h2>
+            <div id="changedContainer">
+                <div id="changedOutput">
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jsdiff/5.1.0/diff.min.js"
+        integrity="sha512-vco9RAxEuv4PQ+iTQyuKElwoUOcsVdp+WgU6Lgo82ASpDfF7vI66LlWz+CZc2lMdn52tjjLOuHvy8BQJFp8a1A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+    <script>
+        document.getElementById("htmlFile").addEventListener("change", loadFile);
+
+        function loadFile(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function (e) {
+                document.getElementById("htmlInput").value = e.target.result;
+                updateResult();
+            };
+
+            reader.readAsText(file);
+        }
+
+        document.getElementById("processButton").addEventListener("click", function () {
+            updateResult();
+        });
+
+        function updateResult() {
+            const inputHTML = document.getElementById("htmlInput").value;
+            const resultOutput = document.getElementById("resultOutput");
+            const changedOutput = document.getElementById("changedOutput");
+            const numBegin = document.getElementById("numBegin").value;
+
+            // Define an array of HTML tag names to process
+            const tagNames = ["li", "h1", "h2", "h3", "h4", "a"];
+
+            // Process the input HTML and replace the titles within specified HTML tags
+            let counter = 1;
+            let processedHTML = inputHTML;
+
+            tagNames.forEach(tagName => {
+                const tagRegExp = new RegExp(`<${tagName}[^>]*>[\\s\\S]*?<\\/${tagName}>`, "g");
+                processedHTML = processedHTML.replace(tagRegExp, function (match) {
+                    const replacedTag = match.replace(/\{#标题\d+([^}]+)?\}/g, function (match, additionalText) {
+                        return `{#标题${counter++}${additionalText || ""}}`;
+                    });
+                    return replacedTag;
+                });
+                counter = numBegin?? 1; // Reset counter for the next tag
+            });
+
+
+            resultOutput.value = processedHTML;
+
+            // Highlight changes
+            const highlightedHTML = highlightChanges(inputHTML, processedHTML);
+            changedOutput.innerHTML = highlightedHTML;
+        }
+
+
+        function highlightChanges(originalHTML, processedHTML) {
+            const diff = Diff.diffChars(originalHTML, processedHTML);
+            let result = '';
+            let inChange = false;
+
+            diff.forEach(part => {
+                if (part.added) {
+                    result += `<span class="highlight">${part.value}</span>`;
+                    inChange = true;
+                } else if (part.removed) {
+                    result += '';
+                } else {
+                    result += part.value;
+                    inChange = false;
+                }
+            });
+
+            return result;
+        }
+
+        document.getElementById("downloadButton").addEventListener("click", downloadHTML);
+
+        function downloadHTML() {
+            const processedHTML = document.getElementById("resultOutput").value;
+            const blob = new Blob([processedHTML], { type: "text/html" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "processed.html";
+            a.style.display = "none";
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    </script>
+</body>
+
+</html>

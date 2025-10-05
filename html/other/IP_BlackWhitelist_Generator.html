@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP JSON Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        textarea, select, input { width: 100%; margin-bottom: 20px; padding: 8px; }
+        textarea { height: 150px; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 8px; overflow: auto; }
+        button { margin-right: 10px; padding: 10px 15px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <h1>IP JSON Generator</h1>
+
+    <label for="ipInput">IP Addresses (one per line):</label>
+    <textarea id="ipInput" placeholder="Enter IP addresses, one per line"></textarea><br>
+
+    <label for="strategy">Strategy:</label>
+    <select id="strategy" onchange="updateBrief()">
+        <option value="drop" selected>drop</option>
+        <option value="accept">accept</option>
+    </select><br>
+
+    <label for="brief">Brief:</label>
+    <input id="brief" type="text" value="attack"><br>
+
+    <button onclick="generateJson()">Generate JSON</button>
+
+    <div id="output" style="margin-top: 20px;"></div>
+
+    <script>
+        function updateBrief() {
+            const strategy = document.getElementById("strategy").value;
+            const briefInput = document.getElementById("brief");
+            briefInput.value = strategy === "drop" ? "attack" : "CDN";
+        }
+
+        function generateJson() {
+            const ipInput = document.getElementById("ipInput").value;
+            const strategy = document.getElementById("strategy").value;
+            const brief = document.getElementById("brief").value;
+
+            const ipList = ipInput.split("\n").map(ip => ip.trim()).filter(ip => ip);
+            const currentTime = new Date().toISOString().replace("T", " ").split(".")[0];
+
+            const jsonData = ipList.map((ip, index) => ({
+                Family: "ipv4",
+                Strategy: strategy,
+                Address: ip,
+                Chain: "INPUT",
+                Zone: "public",
+                id: index + 1,
+                sid: 0,
+                brief: brief,
+                domain: "",
+                addtime: currentTime,
+                area: {
+                    info: ""
+                }
+            }));
+
+            const output = document.getElementById("output");
+            output.innerHTML = `
+                <pre>${JSON.stringify(jsonData, null, 2)}</pre>
+                <button onclick="copyToClipboard()">Copy JSON</button>
+                <button onclick="downloadJson()">Download JSON</button>
+            `;
+            window.generatedJson = jsonData;
+        }
+
+        function copyToClipboard() {
+            navigator.clipboard.writeText(JSON.stringify(window.generatedJson, null, 2));
+            alert("Copied to clipboard!");
+        }
+
+        function downloadJson() {
+            const blob = new Blob([JSON.stringify(window.generatedJson, null, 2)], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.href = url;
+            link.download = "ip_data.json";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+
+</body>
+</html>

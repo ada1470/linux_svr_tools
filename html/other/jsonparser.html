@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON Parser with Copy Button</title>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/themes/prism.min.css" rel="stylesheet" />
+<style>
+  body {
+    font-family: Arial, sans-serif;
+  }
+  #json-input {
+    width: 100%;
+    height: 200px;
+  }
+  #parsed-json {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin-top: 10px;
+    border-radius: 5px;
+  }
+</style>
+</head>
+<body>
+
+<h1>JSON Parser</h1>
+
+<textarea id="json-input" placeholder="Enter JSON here..."></textarea><br>
+<button onclick="parseJSON()">Parse JSON</button>
+<button onclick="copyToClipboard()">Copy</button><br>
+
+<pre id="parsed-json"><code class="language-json"></code></pre>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.25.0/prism.min.js"></script>
+<script>
+function parseJSON() {
+  var input = document.getElementById('json-input').value;
+  // Replace line breaks with <br>
+  input = input.replace(/\n/g, '<br>');
+  try {
+    var parsed = JSON.parse(input);
+    console.log(parsed);
+    var codeElement = document.querySelector('#parsed-json code');
+    codeElement.innerHTML = JSON.stringify(parsed, null, 2);
+    Prism.highlightElement(codeElement);
+  } catch (error) {
+    document.getElementById('parsed-json').innerText = 'Invalid JSON: ' + error.message;
+  }
+}
+
+function copyToClipboard() {
+  var jsonText = document.getElementById('parsed-json').innerText;
+  var tempInput = document.createElement('textarea');
+  tempInput.value = jsonText;
+  document.body.appendChild(tempInput);
+  tempInput.select();
+  document.execCommand('copy');
+  document.body.removeChild(tempInput);
+  alert('JSON copied to clipboard!');
+}
+</script>
+
+</body>
+</html>

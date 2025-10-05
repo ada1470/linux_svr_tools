@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>HTML Code Looper</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        textarea,
+        input[type="number"],
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #generatedCode {
+            height: 200px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>HTML Code Looper</h1>
+
+    <div>
+        <label for="htmlCode">Enter HTML Code:</label>
+        <textarea id="htmlCode" rows="10" cols="50" placeholder="Enter your HTML code here"></textarea>
+    </div>
+
+    <div>
+        <label for="loopCount">Number of Loops:</label>
+        <input type="number" id="loopCount" min="1" value="10">
+    </div>
+
+    <div>
+        <label for="unchangedParts">Parts to Keep Unchanged (use placeholders separated by commas):</label>
+        <input type="text" id="unchangedParts" placeholder="%%UNCHANGED1%%,%%UNCHANGED2%%">
+    </div>
+
+    <button onclick="generateCode()">Generate Code</button>
+
+    <div>
+        <h2>Generated Code:</h2>
+        <textarea id="generatedCode" rows="10" cols="50" readonly></textarea>
+    </div>
+    <!-- Add the Copy Result button -->
+    <button id="copyButton" onclick="copyToClipboard()">Copy Result</button>
+
+    <script>
+        function generateCode() {
+            const htmlCode = document.getElementById('htmlCode').value;
+            const loopCount = document.getElementById('loopCount').value;
+            const unchangedPartsInput = document.getElementById('unchangedParts').value;
+            let unchangedParts = [];
+
+            if (unchangedPartsInput.trim() !== '') {
+                unchangedParts = unchangedPartsInput.split(',').map(part => part.trim());
+            }
+
+            let generatedCode = '';
+            let modifiedHtmlCode = htmlCode;
+
+            generatedCode += `${htmlCode}\n\n`;
+
+            if (unchangedParts.length === 0) {
+                for (let i = 0; i < loopCount; i++) {
+                    modifiedHtmlCode = modifiedHtmlCode.replace(/\d+/g, match => parseInt(match) + 1);
+                    generatedCode += `${modifiedHtmlCode}\n\n`;
+                }
+            } else {
+                for (let i = 0; i < loopCount; i++) {
+                    const replacedHtmlCode = modifiedHtmlCode.replace(new RegExp(`(${unchangedParts.join('|')})|(\\d+)`, 'g'), (match, unchanged, number) => {
+                        if (unchanged !== undefined) {
+                            return unchanged;
+                        } else {
+                            return parseInt(number) + 1;
+                        }
+                    });
+                    generatedCode += replacedHtmlCode + '\n\n';
+                    modifiedHtmlCode = replacedHtmlCode;
+                }
+            }
+
+            document.getElementById('generatedCode').value = generatedCode;
+        }
+
+        function copyToClipboard() {
+            const generatedCode = document.getElementById('generatedCode');
+            generatedCode.select();
+            document.execCommand('copy');
+            alert('Generated code copied to clipboard!');
+        }
+    </script>
+</body>
+
+</html>

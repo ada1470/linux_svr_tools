@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Text Analyzer</title>
+  <style>
+    /* CSS styles */
+
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f7f7f7;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+      border-radius: 5px;
+    }
+
+    h1 {
+      margin-top: 0;
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      resize: vertical;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #009688;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .original-text {
+      margin-top: 20px;
+      padding: 10px;
+      background-color: #f5f5f5;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      white-space: pre-wrap;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .match {
+      /* background-color: #009688; */
+      color: #fff;
+      padding: 5px 10px;
+      margin: 5px;
+      border-radius: 4px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      cursor: pointer;
+      display: inline-block;
+    }
+
+    .copy-notification {
+      color: #009688;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+  </style>
+  <style>
+    .ipAddress {
+      background-color: #f1c40f;
+      /* yellow */
+      color: black;
+    }
+
+    .link {
+      background-color: #3498db;
+      /* blue */
+      color: white;
+    }
+
+    .username {
+      background-color: #2ecc71;
+      /* green */
+      color: white;
+    }
+
+    .password {
+      background-color: #e74c3c;
+      /* red */
+      color: white;
+    }
+
+    .match span:hover {
+      cursor: pointer;
+      background-color: #009688;
+      ;
+    }
+
+    .match span {
+      padding: 5px;
+      line-height: 2;
+    }
+
+    /* .link::after {
+      content: "";
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      background-image: url('shortcut-icon.png');
+      background-repeat: no-repeat;
+      background-size: contain;
+      cursor: pointer;
+      margin-left: 4px;
+    } */
+
+    /* .link::after {
+      content: "🔗";
+      margin-left: 5px;
+      cursor: pointer;
+    } */
+
+    .link {
+      position: relative;
+      padding-right: 30px !important;
+    }
+
+    .link a::after {
+      content: "🔗";
+      /* background-image: url('shortcut-icon.png'); */
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      background-repeat: no-repeat;
+      background-size: contain;
+      position: absolute;
+      top: 50%;
+      /* right: 0; */
+      margin-left: 5px;
+      transform: translateY(-50%);
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Text Analyzer</h1>
+    <div class="form-group">
+      <label for="inputText">Input Text:</label>
+      <textarea id="inputText" rows="10" cols="50"></textarea>
+    </div>
+    <button id="analyzeText">Analyze Text</button>
+    <div class="original-text" id="originalText"></div>
+    <p class="copy-notification" id="copyNotification"></p>
+
+    <!-- To detect domain names in JavaScript and turn them into clickable links that copy the domain name when clicked, you can use the following approach: -->
+    <script>
+      function linkize() {
+        const contentElement = document.getElementById('originalText');
+        console.log(contentElement);
+        // Regular expression to match domain names
+        const domain_regex = /\s+((?:https?:\/\/)?(?:www\.)?([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}))/g;
+
+        // Function to handle click on the domain name link
+        const copyToClipboard = (event) => {
+          const domainName = event.target.textContent;
+          const tempInput = document.createElement('input');
+          tempInput.value = domainName;
+          document.body.appendChild(tempInput);
+          tempInput.select();
+          document.execCommand('copy');
+          document.body.removeChild(tempInput);
+          alert('Domain name copied to clipboard: ' + domainName);
+        };
+
+        // Find and replace domain names with clickable links
+        contentElement.innerHTML = contentElement.innerHTML.replace(domain_regex, (match, url, domain) => {
+
+          // Check if the parent element has a "match" class, if yes, don't create a link
+
+          return `<a href="#" onclick="copyToClipboard('${url}'); return false;" class="domain-link">${url}</a>`;
+
+        });
+
+        // Add click event listeners to the anchor tags
+        const domainLinks = document.querySelectorAll('.domain-link');
+        domainLinks.forEach((link) => {
+          link.addEventListener('click', copyToClipboard);
+        });
+      }
+    </script>
+    <script>
+      // JavaScript code
+      document.getElementById('analyzeText').addEventListener('click', function () {
+        let inputText = document.getElementById('inputText').value;
+        inputText = inputText.replace(/：/g, ':');
+        inputText = inputText.replace(/:\s/g, ':');
+        inputText = inputText.replace(/；/g, ':');
+        // const regex = /(?:https?:\/\/\S+|(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+)|(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+\/\S+))\s+(\S+)\s+(\S+)/g;
+        // const regex = /(?:https?:\/\/\S+|(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+[\/\.]?)|(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+\/\S+))\s+(\S+)\s+(\S+)/g;
+        // const regex = /(?:https?:\/\/\S+|(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+)|(http[s]?:\/\/?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+\/\S+))\s+(\S+)\s+(\S+)/g
+        // const regex = /(?:(http[s]?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+\/\S+)|(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+))\s+(\S+)\s+(\S+)/g
+
+        // const regex = /(?:((?:http[s]?:\/\/)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+\/\S+)|(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+))\s+(\S+)\s+(\S+)/g
+
+        // const regex = /(?:((?:http[s]?:\/\/)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+\/\S+|(?:https?|ftp):\/\/[^\s/$.?#].[^\s]*)|(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+))\s+(\S+)\s+(\S+)/g
+
+        // const regex = /(?:((?:http[s]?:\/\/)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+\/\S+|(?:https?|ftp):\/\/[^\s/$.?#].[^\s]*)|(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+))\s+(?:.*[\p{Script=Han}]?.*, \[\d{4}\/\d{1,2}\/\d{1,2} \d{1,2}:\d{2}\]\s)?(\S+)\s+(\S+)/g
+
+        // const regex = /(?:((?:http[s]?:\/\/)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+\/\S+|(?:https?|ftp):\/\/[^\s/$.?#].[^\s]*|\S+\.(?:com|net|tv|cn)(?:\/\S*))|(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+))\s+(?:.*[\p{Script=Han}]?.*, \[\d{4}\/\d{1,2}\/\d{1,2} \d{1,2}:\d{2}\]\s)?(\S+)\s+(\S+)/g
+
+        // const regex = /(?:((?:http[s]?:\/\/)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+\/\S+|(?:https?|ftp):\/\/[^\s/$.?#].[^\s]*|\S+\.(?:com|net|tv|cn)(?:\/\S*))|(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+))\s+(?:.*[\p{Script=Han}]?.*, \[\d{4}\/\d{1,2}\/\d{1,2} \d{1,2}:\d{2}\]\s+|[\u4E00-\u9FFF]+:\s+https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+\/\S*\s+)?(\S+)\s+(\S+)/g
+
+        const regex = /(?:((?:http[s]?:\/\/)?\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+\/\S+|(?:https?|ftp):\/\/[^\s/$.?#].[^\s]*|\s+[^\s/$.?#]+\.(?:com|net|tv|cn)(?:\/\S*))|(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\s*端口:\d{2,5}|\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?::\d+)?))\s+(?:.*[\p{Script=Han}]?.*, \[\d{4}\/\d{1,2}\/\d{1,2} \d{1,2}:\d{2}\]\s+|\S+:https?:\/\/\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d+\/\S*\s+)?(\S+)\s+(\S+)/g
+
+
+        const originalTextContainer = document.getElementById('originalText');
+        originalTextContainer.innerHTML = '';
+
+        let lastIndex = 0;
+        let match;
+
+        while ((match = regex.exec(inputText)) !== null) {
+
+          const fullMatch = match[0];
+          const link = match[1] || '';
+          let ipAddress = match[2] || '';
+          const username = match[3].split(/[:]/).pop();
+          const password = match[4].split(/[:]/).pop();
+
+          console.log(match);
+
+          if (ipAddress.indexOf('端口:') !== -1) {
+            ipAddress = ipAddress.replace(/\s/g, '');
+            ipAddress = ipAddress.replace(/端口:/g, ':');
+          }
+
+
+          const plainText = inputText.substring(lastIndex, match.index);
+          const plainTextNode = document.createTextNode(plainText);
+          originalTextContainer.appendChild(plainTextNode);
+
+          const matchElement = document.createElement('span');
+          matchElement.className = 'match';
+          // matchElement.textContent = fullMatch;
+
+
+
+
+          const linkElement = document.createElement('span');
+          linkElement.className = 'link';
+          linkElement.textContent = link;
+          addEventClicked(linkElement);
+
+          const linkIcon = document.createElement('a');
+          linkIcon.href = (link.includes('http')) ? link : (link != '') ? 'http://' + link : '';
+          linkIcon.target = '_blank';
+          linkElement.appendChild(linkIcon);
+
+          linkIcon.addEventListener('click', function (event) {
+            if (event.target !== linkIcon) {
+              window.open(link, '_blank');
+            }
+          });
+
+
+          matchElement.appendChild(linkElement);
+
+          const ipAddressElement = document.createElement('span');
+          ipAddressElement.className = 'ipAddress';
+          ipAddressElement.textContent = ipAddress;
+          addEventClicked(ipAddressElement);
+          matchElement.appendChild(ipAddressElement);
+
+          const usernameElement = document.createElement('span');
+          usernameElement.className = 'username';
+          usernameElement.textContent = username;
+          addEventClicked(usernameElement);
+          matchElement.appendChild(usernameElement);
+
+          const passwordElement = document.createElement('span');
+          passwordElement.className = 'password';
+          passwordElement.textContent = password;
+          addEventClicked(passwordElement);
+          matchElement.appendChild(passwordElement);
+
+          originalTextContainer.appendChild(matchElement);
+
+          lastIndex = regex.lastIndex;
+
+        }
+
+        function addEventClicked(matchElement) {
+          matchElement.addEventListener('click', function () {
+            const textToCopy = this.textContent.trim();
+
+            const tempInput = document.createElement('input');
+            document.body.appendChild(tempInput);
+            tempInput.value = textToCopy;
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            // const copyNotification = document.getElementById('copyNotification');
+            // copyNotification.textContent = 'Copied to clipboard!';
+            this.style.background = '#009688';
+          });
+        }
+
+        const remainingText = inputText.substring(lastIndex);
+        const remainingTextNode = document.createTextNode(remainingText);
+        originalTextContainer.appendChild(remainingTextNode);
+
+        // linkize();
+      });
+
+    </script>
+
+
+  </div>
+</body>
+
+</html>

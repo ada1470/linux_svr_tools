@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find and Replace Tool</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f7f7f7;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        label {
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        input[type="radio"],
+        input[type="checkbox"],
+        button {
+            margin-bottom: 10px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 16px;
+        }
+
+        input[type="text"] {
+            width: calc(100% - 40px);
+        }
+
+        button {
+            background-color: #4caf50;
+            color: white;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            font-size: 16px;
+            resize: vertical;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Find and Replace Tool</h1>
+        <label for="directory">Directory:</label>
+        <input type="text" id="directory" name="directory" required placeholder="/home/www/wwwroot/film.com/"><br><br>
+
+        <label for="find">Find:</label>
+        <input type="text" id="find" name="find" required placeholder="base64_encode">
+        <label for="fast">Fast</label>
+        <input type="radio" id="fast" name="speed" value="fast">
+        <label for="slow">Slow</label>
+        <input type="radio" id="slow" name="speed" value="slow" checked><br><br>
+
+        <label for="extension">File Extension:</label>
+        <input type="text" id="extension" name="extension" placeholder="php (search for *.php)"><br><br>
+
+        <input type="checkbox" id="replaceCheckbox" onchange="toggleReplace()">
+        <label for="replaceCheckbox">Replace:</label>
+        <input type="text" id="replace" name="replace" disabled><br><br>
+
+        <button onclick="generateString()">Generate</button>
+        <button onclick="copyToClipboard()">Copy</button><br><br>
+
+        <textarea id="result" rows="10" cols="50"></textarea>
+    </div>
+
+    <script>
+        function toggleReplace() {
+            var replaceInput = document.getElementById("replace");
+            var fastRadio = document.getElementById("fast");
+            var slowRadio = document.getElementById("slow");
+            var replaceCheckbox = document.getElementById("replaceCheckbox");
+
+            replaceInput.disabled = !replaceCheckbox.checked;
+            fastRadio.disabled = replaceCheckbox.checked;
+            slowRadio.disabled = replaceCheckbox.checked;
+        }
+
+        function generateString() {
+            var directory = document.getElementById("directory").value;
+            var find = document.getElementById("find").value;
+            var replace = document.getElementById("replace").value;
+            var speed = document.querySelector('input[name="speed"]:checked').value;
+            var extension = document.getElementById("extension").value;
+            var resultTextarea = document.getElementById("result");
+
+            var generatedString = "";
+
+            if (replace) {
+                generatedString += `find ${directory} -type f`;
+                if (extension) {
+                    generatedString += ` -name "*.${extension}"`;
+                }
+                generatedString += ` -exec sed -i 's#${find}#${replace}#g' {} + -print\n`;
+            } else {
+                generatedString += `find ${directory} -type f`;
+                if (extension) {
+                    generatedString += ` -name "*.${extension}"`;
+                }
+                if (speed === "fast") {
+                    generatedString += ` -exec egrep -lH "${find}" {} +\n`;
+                } else if (speed === "slow") {
+                    generatedString += ` -exec egrep -lH "${find}" {} + | xargs -I{} sh -c 'echo "File: {}"; egrep -o ".{0,100}${find}.{0,100}" {}'\n`;
+                }
+            }
+
+            resultTextarea.value = generatedString;
+        }
+
+        function copyToClipboard() {
+            var resultTextarea = document.getElementById("result");
+            resultTextarea.select();
+            if (resultTextarea.value == "") {
+                alert("Empty!");
+            } else {
+                document.execCommand("copy");
+                alert("Copied to clipboard!");
+            }
+        }
+    </script>
+</body>
+
+</html>

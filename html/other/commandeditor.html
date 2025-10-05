@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Log Analyzer</title>
+  <style>
+    /* CSS styles */
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #f4f4f4;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #fff;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    select {
+      width: 100%;
+      margin-bottom: 10px;
+      height: 30px;
+    }
+
+    button {
+      width: 100%;
+      padding: 10px 0;
+    }
+
+    textarea {
+      width: 100%;
+      height: 100px;
+      margin-top: 10px;
+    }
+
+    .radio-label {
+      display: inline-block;
+      margin-right: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Log Analyzer</h1>
+
+    <label for="presetOptions">Select Preset:</label>
+    <select id="presetOptions" onchange="applyPreset()">
+      <option value="1">1. Get top ip (Column: 1; Use Format: No;)</option>
+      <option value="2">2. Get top uri (<i>request</i>) (Column: 2; Use Format: Yes; Format separator: Double Quote;)</option>
+      <option value="4">3. Get top from (<i>source</i>) (Column: 4; Use Format: Yes; Format separator: Double Quote;)</option>
+      <option value="3">4. Get top client (<i>error</i>) (Column: 2; Use Format: Yes; Format separator: Comma; Include Error: Yes;)</option>
+      <option value="6">5. Get top server (<i>error</i>) (Column: 3; Use Format: Yes; Format separator: Comma; Include Error: Yes;)</option>
+      <option value="5">6. Get top host (<i>error</i>) (Column: 5; Use Format: Yes; Format separator: Comma; Include Error: Yes;)</option>
+      <option value="7">7. Get top request (<i>error</i>) (Column: 4; Use Format: Yes; Format separator: Comma; Include Error: Yes;)</option>
+    </select>
+
+    <label for="websiteName">Website name:</label>
+    <input type="text" id="websiteName" placeholder="Enter Website name (e.g., *)" value="*" onclick="selectAll(this)">
+
+    <label for="lineNumber">Number of Lines (optional):</label>
+    <input type="number" id="lineNumber" placeholder="Enter number of lines" value="20" onclick="selectAll(this)">
+
+    <label for="columnNumber">Column Number:</label>
+    <input type="number" id="columnNumber" placeholder="Enter column number" value="1" onclick="selectAll(this)">
+
+    <label>Include FILENAME:</label>
+    <div class="radio-label">
+      <input type="radio" id="filenameYes" name="addFileName" value="true" checked>
+      <label for="filenameYes">Yes</label>
+    </div>
+    <div class="radio-label">
+      <input type="radio" id="filenameNo" name="addFileName" value="false">
+      <label for="filenameNo">No</label>
+    </div>
+
+    <label>Use Format Separator:</label>
+    <div class="radio-label">
+      <input type="radio" id="useFormatSeparatorYes" name="useFormatSeparator" value="true" onclick="toggleFormatSeparator(true)">
+      <label for="useFormatSeparatorYes">Yes</label>
+    </div>
+    <div class="radio-label">
+      <input type="radio" id="useFormatSeparatorNo" name="useFormatSeparator" value="false" onclick="toggleFormatSeparator(false)" checked>
+      <label for="useFormatSeparatorNo">No</label>
+    </div>
+
+    <label for="formatSeparator">Format Separator:</label>
+    <select id="formatSeparator" disabled>
+      <option value='"' selected>Double Quote (")</option>
+      <option value=','>Comma (,)</option>
+      <option value='\t'>Tab (\t)</option>
+      <!-- Add more options if needed -->
+    </select>
+
+    <label>Include Error Logs:</label>
+    <div class="radio-label">
+      <input type="radio" id="includeErrorYes" name="includeError" value="true" checked>
+      <label for="includeErrorYes">Yes</label>
+    </div>
+    <div class="radio-label">
+      <input type="radio" id="includeErrorNo" name="includeError" value="false">
+      <label for="includeErrorNo">No</label>
+    </div>
+
+    <button onclick="analyzeLogs()">Generate Analyze Logs Command</button>
+
+    <textarea id="output" placeholder="Output will appear here" readonly></textarea>
+
+    <button onclick="copyToClipboard()">Copy Command</button>
+  </div>
+
+  <script>
+    function applyPreset() {
+      const presetOptions = document.getElementById('presetOptions').value;
+      let columnNumber = 1;
+      let useFormat = false;
+      let formatSeparator = '"'; // Default format separator
+      let includeError = false; // Default includeError value
+
+      if (presetOptions === '1') {
+        columnNumber = 1;
+        useFormat = false;
+        includeError = false;
+      } else if (presetOptions === '2' || presetOptions === '4') {
+        columnNumber = parseInt(presetOptions);
+        useFormat = true;
+      } else if (presetOptions === '3') {
+        columnNumber = 2;
+        useFormat = true;
+        formatSeparator = ',';
+        includeError = true;
+      } else if (presetOptions === '6') {
+        columnNumber = 3;
+        useFormat = true;
+        formatSeparator = ',';
+        includeError = true;
+      } else if (presetOptions === '5') {
+        columnNumber = 5;
+        useFormat = true;
+        formatSeparator = ',';
+        includeError = true;
+      } else if (presetOptions === '7') {
+        columnNumber = 4;
+        useFormat = true;
+        formatSeparator = ',';
+        includeError = true;
+      }
+
+      document.getElementById('columnNumber').value = columnNumber;
+      document.getElementById('useFormatSeparatorYes').checked = useFormat;
+      document.getElementById('useFormatSeparatorNo').checked = !useFormat;
+      document.getElementById('includeErrorYes').checked = includeError;
+      document.getElementById('includeErrorNo').checked = !includeError;
+
+      toggleFormatSeparator(useFormat, formatSeparator);
+    }
+
+    function analyzeLogs() {
+      const websiteName = document.getElementById('websiteName').value;
+      const lineNumber = document.getElementById('lineNumber').value || '';
+      const columnNumber = document.getElementById('columnNumber').value;
+      const addFileName = document.querySelector('input[name="addFileName"]:checked').value === 'true';
+      const formatSeparator = document.getElementById('formatSeparator').value;
+      const useFormatSeparator = document.querySelector('input[name="useFormatSeparator"]:checked').value === 'true';
+      const includeErrorLogs = document.querySelector('input[name="includeError"]:checked').value === 'true';
+
+      let filename = '';
+      if (addFileName) {
+        filename = ', FILENAME';
+      }
+
+      let formatOption = '';
+      if (useFormatSeparator) {
+        formatOption = `-F'${formatSeparator}' `;
+      }
+
+      let logFiles = `/www/wwwlogs/${websiteName}.log`;
+      if (includeErrorLogs) {
+        logFiles = `/www/wwwlogs/${websiteName}.error.log`;
+      }
+
+      // Create the command based on user input
+      let command = `awk ${formatOption}'{print $${columnNumber}${filename}}' ${logFiles} | sort | uniq -c | sort -nr`;
+      if (lineNumber !== '') {
+        command += ` | head -n ${lineNumber}`;
+      }
+
+      // Display the generated command
+      document.getElementById('output').value = command;
+    }
+
+    function copyToClipboard() {
+      const output = document.getElementById('output');
+      output.select();
+      document.execCommand('copy');
+      alert('Command copied to clipboard!');
+    }
+
+    function selectAll(element) {
+      element.select();
+    }
+
+    function toggleFormatSeparator(value, separator) {
+      const formatSeparator = document.getElementById('formatSeparator');
+      formatSeparator.disabled = !value;
+      if (!value) {
+        formatSeparator.selectedIndex = 0;
+      } else {
+        formatSeparator.value = separator;
+      }
+    }
+  </script>
+</body>
+</html>
