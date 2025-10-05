@@ -187,6 +187,7 @@ show_menu() {
     echo "5) Replace path for multiple sites"
     echo "6) Restore last backup"
     echo "7) Restart webserver"
+    echo "8) Test config"
     echo "0) Exit"
     echo
 }
@@ -234,6 +235,7 @@ while true; do
             ;;
         6) restore_configs ;;
         7) restart_webserver ;;
+        8) check_config ;;
         0) log "INFO" "Exit"; exit 0 ;;
         *) echo -e "${RED}Invalid choice${RESET}" ;;
     esac
