@@ -16,7 +16,7 @@ NC='\033[0m'
 extract_domains() {
     grep -r -h -E '^\s*Server(Name|Alias)' "$vhost_dir"/*/*.conf \
     | awk '{ for(i=2; i<=NF; i++) print $i }' \
-    | sed -E 's/^(www\.|\*\.)//' 
+    | sed -E 's/^(www\.|\*\.)//'
 }
 
 # Convert to base domain (remove subdomain)
@@ -43,12 +43,25 @@ get_base_domain() {
     echo "${parts[$count-2]}.${parts[$count-1]}"
 }
 
+# Validate domain: reject numeric/malformed TLDs
+is_valid_domain() {
+    domain="$1"
+    tld="${domain##*.}"
+    if [[ "$tld" =~ ^[a-zA-Z]{2,}$ ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
 # Prepare unique base domains
 all_domains=$(extract_domains)
 unique_base_domains=()
 for d in $all_domains; do
     base=$(get_base_domain "$d")
-    unique_base_domains+=("$base")
+    if is_valid_domain "$base"; then
+        unique_base_domains+=("$base")
+    fi
 done
 
 # Deduplicate
@@ -56,7 +69,7 @@ all_domains=$(printf "%s\n" "${unique_base_domains[@]}" | sort -u)
 total_domains=$(echo "$all_domains" | wc -l)
 
 # Print total domains before menu
-echo "🟢 Total base domains on server: $total_domains"
+echo "🟢 Total valid base domains on server: $total_domains"
 echo
 
 # Ask user for number of domains if no param is given
@@ -76,7 +89,6 @@ else
     limit="$1"
 fi
 
-# Clear result files before checking
 > "$in_range_file"
 > "$out_of_range_file"
 
@@ -105,7 +117,6 @@ check_ip_range() {
 }
 
 draw_table() {
-    # Apply limit if specified
     if [ -n "$limit" ]; then
         domains=$(echo "$all_domains" | head -n "$limit")
     else
