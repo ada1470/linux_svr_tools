@@ -1,34 +1,87 @@
 #!/bin/bash
 
-# Directory where vhost configurations are stored
-vhost_dir="/www/server/panel/vhost"  # Modify as needed
-# Files to store results
+vhost_dir="/www/server/panel/vhost"
 in_range_file="in_range_domains.txt"
 out_of_range_file="out_of_range_domains.txt"
 
-# Clear previous result files
 > "$in_range_file"
 > "$out_of_range_file"
 
-
-# Color variables
 RED='\033[0;31m'
 GREEN='\033[0;32m'
-NC='\033[0m' # No Color
+ORANGE='\033[0;33m'
+NC='\033[0m'
 
-# Function to extract domains from vhost config files
+# Extract domains from vhost config
 extract_domains() {
-    # echo "Extracting domains from vhost configuration..."
     grep -r -h -E '^\s*Server(Name|Alias)' "$vhost_dir"/*/*.conf \
     | awk '{ for(i=2; i<=NF; i++) print $i }' \
-    | sed -E 's/^(www\.|\*\.)//' \
-    | sort | uniq
+    | sed -E 's/^(www\.|\*\.)//' 
 }
 
-# Function to get the IP address of the domain
+# Convert to base domain (remove subdomain)
+get_base_domain() {
+    domain=$(echo "$1" | tr '[:upper:]' '[:lower:]')  # lowercase
+    IFS='.' read -r -a parts <<< "$domain"
+    count=${#parts[@]}
+
+    if (( count < 2 )); then
+        echo "$domain"
+        return
+    fi
+
+    tld_keywords=("com" "net" "org" "gov" "co")
+
+    second_last=${parts[$count-2]}
+    for kw in "${tld_keywords[@]}"; do
+        if [[ "$second_last" == "$kw" && $count -ge 3 ]]; then
+            echo "${parts[$count-3]}.${parts[$count-2]}.${parts[$count-1]}"
+            return
+        fi
+    done
+
+    echo "${parts[$count-2]}.${parts[$count-1]}"
+}
+
+# Prepare unique base domains
+all_domains=$(extract_domains)
+unique_base_domains=()
+for d in $all_domains; do
+    base=$(get_base_domain "$d")
+    unique_base_domains+=("$base")
+done
+
+# Deduplicate
+all_domains=$(printf "%s\n" "${unique_base_domains[@]}" | sort -u)
+total_domains=$(echo "$all_domains" | wc -l)
+
+# Print total domains before menu
+echo "🟢 Total base domains on server: $total_domains"
+echo
+
+# Ask user for number of domains if no param is given
+if [ -z "$1" ]; then
+    echo "Select option:"
+    echo "1) Check all domains"
+    echo "2) Check a specific number of domains"
+    read -rp "Enter choice [1/2]: " choice
+    if [ "$choice" == "1" ]; then
+        limit=""
+    elif [ "$choice" == "2" ]; then
+        read -rp "Enter number of domains to check: " limit
+    else
+        echo "Invalid choice"; exit 1
+    fi
+else
+    limit="$1"
+fi
+
+# Clear result files before checking
+> "$in_range_file"
+> "$out_of_range_file"
+
 get_ip() {
     domain=$1
-    # Try getting the first IPv4 address using getent (or fallback to ping if necessary)
     ip=$(getent ahostsv4 "$domain" | awk '{print $1; exit}')
     if [ -z "$ip" ]; then
         ip=$(ping -4 -c 1 "$domain" > /dev/null 2>&1 && echo "$domain" | sed -n 's/.*(\(.*\)).*/\1/p')
@@ -36,127 +89,80 @@ get_ip() {
     echo "$ip"
 }
 
-# Function to draw a table with borders and save results to files
-# draw_table() {
-#     # Extract domains
-#     domains=$(extract_domains)
+get_http_code() {
+    domain=$1
+    curl -o /dev/null -s -w "%{http_code}" -L -A "mobile" "http://$domain" --connect-timeout 5 --max-time 10
+}
 
-#     # Print table header
-#     echo "+----------------------------+------------------+--------------------+"
-#     echo "| Domain Name               | IP Address       | In Server IP Range |"
-#     echo "+----------------------------+------------------+--------------------+"
+check_ip_range() {
+    ip=$1
+    server_ips=$(ip addr | grep -E 'inet ' | grep -v '127.0.0.1' | awk '{print $2}' | cut -d'/' -f1)
+    if echo "$server_ips" | grep -wq "$ip"; then
+        return 0
+    else
+        return 1
+    fi
+}
 
-#     # Loop through each domain and check if its IP is in the server's IP range
-#     while read -r domain; do
-#         # Get the domain IP using the get_ip function
-#         domain_ip=$(get_ip "$domain")
-
-#         # Check if the domain's IP is pingable
-#         if [ -z "$domain_ip" ]; then
-#             domain_ip="Not Pingable"
-#             in_range="No"
-#         else
-#             # Check if the domain's IP is in the server's IP range
-#             if check_ip_range "$domain_ip"; then
-#                 in_range="Yes"
-#                 echo "$domain" >> "$in_range_file"
-#             else
-#                 in_range="No"
-#                 echo "$domain" >> "$out_of_range_file"
-#             fi
-#         fi
-
-#         # Print the domain info in the table row
-#         # printf "| %-26s | %-16s | %-18s |\n" "$domain" "$domain_ip" "$in_range"
-        
-#         # Apply colors based on conditions
-#         if [ "$domain_ip" == "Not Pingable" ]; then
-#             ip_colored="${RED}${domain_ip}${NC}"
-#         else
-#             ip_colored="${GREEN}${domain_ip}${NC}"
-#         fi
-        
-#         if [ "$in_range" == "Yes" ]; then
-#             range_colored="${GREEN}${in_range}${NC}"
-#         else
-#             range_colored="${RED}${in_range}${NC}"
-#         fi
-        
-#         # Print colorized row
-#         printf "| %-26s | %-16b | %-18b |\n" "$domain" "$ip_colored" "$range_colored"
-
-#     done <<< "$domains"
-
-#     # Print table footer
-#     echo "+----------------------------+------------------+--------------------+"
-# }
-
-# ANSI color codes
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
-# Function to draw a table with color and proper alignment
 draw_table() {
-    domains=$(extract_domains)
+    # Apply limit if specified
+    if [ -n "$limit" ]; then
+        domains=$(echo "$all_domains" | head -n "$limit")
+    else
+        domains="$all_domains"
+    fi
 
-    # Print table header
-    echo "+------------------------------+--------------------+----------------------+"
-    echo "| Domain Name                 | IP Address         | In Server IP Range   |"
-    echo "+------------------------------+--------------------+----------------------+"
+    echo "+------------------------------+--------------------+----------------------+-----------+"
+    echo "| Domain Name                 | IP Address         | In Server IP Range   | HTTP Code |"
+    echo "+------------------------------+--------------------+----------------------+-----------+"
 
     while read -r domain; do
         domain_ip=$(get_ip "$domain" 2>/dev/null)
-
         if [ -z "$domain_ip" ]; then
-            ip_disp="Not Pingable"
-            ip_color="${RED}"
-            in_range_disp="No"
-            range_color="${RED}"
+            ip_disp="Not Pingable"; ip_color="$RED"
+            in_range_disp="No"; range_color="$RED"
+            raw_http_code="N/A"; http_code_disp="${RED}N/A${NC}"
             echo "$domain" >> "$out_of_range_file"
         else
-            ip_disp="$domain_ip"
-            ip_color="${GREEN}"
+            ip_disp="$domain_ip"; ip_color="$GREEN"
             if check_ip_range "$domain_ip"; then
-                in_range_disp="Yes"
-                range_color="${GREEN}"
+                in_range_disp="Yes"; range_color="$GREEN"
                 echo "$domain" >> "$in_range_file"
             else
-                in_range_disp="No"
-                range_color="${RED}"
+                in_range_disp="No"; range_color="$RED"
                 echo "$domain" >> "$out_of_range_file"
             fi
+            raw_http_code=$(get_http_code "$domain")
+            case "$raw_http_code" in
+                200) http_color="$GREEN" ;;
+                301|302) http_color="$ORANGE" ;;
+                *) http_color="$RED" ;;
+            esac
+            padded_http=$(printf "%-9s" "$raw_http_code")
+            http_code_disp="${http_color}${padded_http}${NC}"
         fi
 
-        # Pad fields first, then apply colors
         padded_domain=$(printf "%-28s" "$domain")
         padded_ip=$(printf "%-18s" "$ip_disp")
         padded_range=$(printf "%-20s" "$in_range_disp")
 
-        printf "| %s | %b%s%b | %b%s%b |\n" \
+        printf "| %s | %b%s%b | %b%s%b | %b |\n" \
             "$padded_domain" \
             "$ip_color" "$padded_ip" "$NC" \
-            "$range_color" "$padded_range" "$NC"
+            "$range_color" "$padded_range" "$NC" \
+            "$http_code_disp"
     done <<< "$domains"
 
-    echo "+------------------------------+--------------------+----------------------+"
+    echo "+------------------------------+--------------------+----------------------+-----------+"
+
+    total_tested=$(echo "$domains" | wc -l)
+    total_in=$(wc -l < "$in_range_file")
+    total_out=$(wc -l < "$out_of_range_file")
+    echo
+    echo "✅ Total domains tested: $total_tested"
+    echo "✅ Domains in server IP range: $total_in"
+    echo "❌ Domains not in range or not pingable: $total_out"
 }
 
-
-# Function to check if an IP is in the server's IP range
-check_ip_range() {
-    ip=$1
-    server_ips=$(ip addr | grep -E 'inet ' | grep -v '127.0.0.1' | awk '{print $2}' | cut -d'/' -f1)
-
-    if echo "$server_ips" | grep -wq "$ip"; then
-        return 0  # IP is in the range
-    else
-        return 1  # IP is not in the range
-    fi
-}
-
-# Run the function to draw the table
 draw_table
-
 echo "Results saved to $in_range_file (In range) and $out_of_range_file (Not in range or not pingable)"
