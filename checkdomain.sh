@@ -125,15 +125,38 @@ get_http_code() {
     curl -o /dev/null -s -w "%{http_code}" -L -A "mobile" "http://$domain" --connect-timeout 5 --max-time 10
 }
 
+
+# check_ip_range() {
+#     ip=$1
+
+#     # Try using ip command first
+#     if command -v ip >/dev/null 2>&1; then
+#         server_ips=$(ip -4 addr show | grep -oP '(?<=inet\s)\d+(\.\d+){3}')
+#     elif command -v ifconfig >/dev/null 2>&1; then
+#         server_ips=$(ifconfig | grep -oE 'inet (addr:)?([0-9]+\.){3}[0-9]+' | awk '{print $2}' | sed 's/addr://')
+#     else
+#         # Last resort: extract from /proc/net/fib_trie (kernel routing table)
+#         server_ips=$(grep -A1 '32 host LOCAL' /proc/net/fib_trie | grep -oE '([0-9]+\.){3}[0-9]+')
+#     fi
+
+#     if echo "$server_ips" | grep -wq "$ip"; then
+#         return 0
+#     else
+#         return 1
+#     fi
+# }
+
 check_ip_range() {
     ip=$1
-    server_ips=$(ip addr | grep -E 'inet ' | grep -v '127.0.0.1' | awk '{print $2}' | cut -d'/' -f1)
+    server_ips=$(hostname -I 2>/dev/null)
+
     if echo "$server_ips" | grep -wq "$ip"; then
-        return 0
+        return 0  # IP is in server range
     else
-        return 1
+        return 1  # Not in range
     fi
 }
+
 
 draw_table() {
     if [ -n "$limit" ]; then
