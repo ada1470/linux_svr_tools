@@ -1,8 +1,10 @@
 #!/bin/bash
 
 vhost_dir="/www/server/panel/vhost"
-in_range_file="in_range_domains.txt"
-out_of_range_file="out_of_range_domains.txt"
+# Use /var/tmp for safety and no permission issues
+in_range_file="/var/tmp/in_range_domains.txt"
+out_of_range_file="/var/tmp/out_of_range_domains.txt"
+
 
 > "$in_range_file"
 > "$out_of_range_file"
@@ -12,12 +14,29 @@ GREEN='\033[0;32m'
 ORANGE='\033[0;33m'
 NC='\033[0m'
 
+# # Extract domains from vhost config
+# extract_domains() {
+#     grep -r -h -E '^\s*Server(Name|Alias)' "$vhost_dir"/*/*.conf \
+#     | awk '{ for(i=2; i<=NF; i++) print $i }' \
+#     | sed -E 's/^(www\.|\*\.)//'
+# }
+
 # Extract domains from vhost config
 extract_domains() {
-    grep -r -h -E '^\s*Server(Name|Alias)' "$vhost_dir"/*/*.conf \
-    | awk '{ for(i=2; i<=NF; i++) print $i }' \
-    | sed -E 's/^(www\.|\*\.)//'
+    # Get from Nginx: server_name lines
+    grep -r -h -E '^\s*server_name' "$vhost_dir"/nginx/*.conf 2>/dev/null \
+        | awk '{for(i=2;i<=NF;i++)print $i}' \
+        | sed -E 's/^(www\.|\*\.)//' |
+
+    # Get from Apache: ServerAlias only (skip ServerName)
+    cat - <(grep -r -h -E '^\s*ServerAlias' "$vhost_dir"/apache/*.conf 2>/dev/null \
+        | awk '{for(i=2;i<=NF;i++)print $i}' \
+        | sed -E 's/^(www\.|\*\.)//') |
+    
+    # Merge, sort, and deduplicate
+    sort -u
 }
+
 
 # Convert to base domain (remove subdomain)
 get_base_domain() {
